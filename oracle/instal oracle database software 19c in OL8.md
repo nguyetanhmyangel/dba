@@ -286,27 +286,30 @@ export CV_ASSUME_DISTID=OEL7.6
 ```
 
 ### 19. Khi Installer windows mở ra, chọn như bên dưới:
-![Mô tả ảnh](images/install01.png)
 
-![Mô tả ảnh](images/install02.png)
+![Mô tả ảnh](../images/install01.png)
 
-![Mô tả ảnh](images/install03.png)
+![Mô tả ảnh](../images/install02.png)
 
-![Mô tả ảnh](images/install04.png)
+![Mô tả ảnh](../images/install03.png)
 
-![Mô tả ảnh](images/install05.png)
+![Mô tả ảnh](../images/install04.png)
 
-![Mô tả ảnh](images/install06.png)
+![Mô tả ảnh](../images/install05.png)
 
-![Mô tả ảnh](images/install07.png)
+![Mô tả ảnh](../images/install06.png)
+
+![Mô tả ảnh](../images/install07.png)
 
 Trong  window installer dưới, chọn Save Response File.
-![Mô tả ảnh](images/install08.png)
 
-![Mô tả ảnh](images/install09.png)
+![Mô tả ảnh](../images/install08.png)
+
+![Mô tả ảnh](../images/install09.png)
 
 Bấm vào Cancel button
-![Mô tả ảnh](images/install10.png)
+
+![Mô tả ảnh](../images/install10.png)
 
 - KIêm tra response file vừa tạo:
 
@@ -325,7 +328,8 @@ chmod 600 /home/oracle/db.rsp
 ```bash
 $ORACLE_HOME/runInstaller -silent -responseFile /home/oracle/db.rsp 
 ```
-![Mô tả ảnh](images/instal11.png)
+
+![Mô tả ảnh](../images/install01.png)
 
 
 ### 21. Xác minh rằng SQL*Plus chạy từ Oracle home.
