@@ -72,14 +72,24 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 reboot
 ```
 
-### 3. Lấy bản sửa lỗi và lỗi bảo mật Linux mới nhất và áp dụng:
+### 3. Đặt chính xác tên hostname trong "/etc/hostname" 
+
+```bash
+vi /etc/hosts
+
+127.0.0.1       localhost localhost.localdomain localhost4 localhost4.localdomain4
+192.168.56.107  ol8-19.localdomain  ol8-19
+```
+
+
+### 4. Lấy bản sửa lỗi và lỗi bảo mật Linux mới nhất và áp dụng:
 
 ```bash
 yum update -y
 Reboot
 ```
 
-### 4. Đăng nhập vào server với tư cách là root rồi chạy lệnh sau để tự động cài đặt và cập nhật các gói hệ điều hành cần thiết cho phần mềm Oracle database 19c. 
+### 5. Đăng nhập vào server với tư cách là root rồi chạy lệnh sau để tự động cài đặt và cập nhật các gói hệ điều hành cần thiết cho phần mềm Oracle database 19c. 
 
 ```bash
 yum install oracle-database-preinstall-19c
@@ -88,19 +98,19 @@ yum install oracle-database-preinstall-19c
 Trong trường hợp thực tế, nếu máy không được kết nối Internet, chúng ta phải tải xuống và cài đặt thủ công các gói cần thiết.
 
 
-### 5. Xác minh rằng các tham số Kernel được tự động cập nhật bởi lệnh trước đó: 
+### 6. Xác minh rằng các tham số Kernel được tự động cập nhật bởi lệnh trước đó: 
 
 ```bash
 cat /etc/sysctl.d/99-oracle-database-preinstall-19c-sysctl.conf
 ```
 
-### 6. Xác minh rằng các giới hạn tài nguyên được tự động cấu hình cho user oracle: 
+### 7. Xác minh rằng các giới hạn tài nguyên được tự động cấu hình cho user oracle: 
 
 ```bash
 cat /etc/security/limits.d/oracle-database-preinstall-19c.conf 
 ```
 
-### 7. Xác minh user hệ điều hành đại diện cho chủ sở hữu phần mềm và nhóm OSDBA đã có ở đó. Theo truyền thống, user oracle được sử dụng làm chủ sở hữu phần mềm cho phần mềm cơ sở dữ liệu Oracle. nhóm dba được sử dụng làm nhóm OSDBA. Nếu trong hệ thống, người dùng oracle không có ở đó, chúng ta phải tạo user đó: 
+### 8. Xác minh user hệ điều hành đại diện cho chủ sở hữu phần mềm và nhóm OSDBA đã có ở đó. Theo truyền thống, user oracle được sử dụng làm chủ sở hữu phần mềm cho phần mềm cơ sở dữ liệu Oracle. nhóm dba được sử dụng làm nhóm OSDBA. Nếu trong hệ thống, người dùng oracle không có ở đó, chúng ta phải tạo user đó: 
 
 - Kiểm tra user oracle:
 
@@ -132,7 +142,7 @@ useradd -u 54321 -g oinstall -G dba,oper oracle
 passwd oracle
 ```
 
-### 8. Set module bảo mật kernel Linux SELinux sang chế độ permissive
+### 9. Set module bảo mật kernel Linux SELinux sang chế độ permissive
 
 ```bash 
 vi /etc/selinux/config
@@ -140,14 +150,14 @@ SELINUX=permissive
 setenforce Permissive
 ```
 
-### 9. Nếu Linux firewall enabled thì disable 
+### 10. Nếu Linux firewall enabled thì disable 
 
 ```bash
 systemctl stop firewalld
 systemctl disable firewalld
 ```
 
-### 10. Kiểm tra thư mục cài đặt, nếu chưa có tạo các thư mục
+### 11. Kiểm tra thư mục cài đặt, nếu chưa có tạo các thư mục
 
 ```bash
 [ -d "/u01/app/oracle/product/19.3.0" ] && echo "exist directory" || echo "not exist directory"
@@ -167,19 +177,19 @@ chown -R oracle:oinstall /u01 /u02 /u03 /u02
 chmod -R 775 /u01 /u02 /u03 /u04
 ```
 
-### 11. Chuyển user hiện tại sang oracle
+### 12. Chuyển user hiện tại sang oracle
 
 ```bash
 su - oracle
 ```
 
-### 12. Backup .bash_profile:
+### 13. Backup .bash_profile:
 
 ```bash
 cp /home/oracle/.bash_profile /home/oracle/.bash_profile.old
 ```
 
-### 13. Tạo 1 thư mục scripts và thực thi các command sau:
+### 14. Tạo 1 thư mục scripts và thực thi các command sau:
 
 ```bash
 mkdir /home/oracle/scripts
@@ -224,13 +234,13 @@ umask 022
 EOF
 ```
 
-### 14. Thêm một tham chiếu đến tệp "setenv.sh" ở cuối tệp "/home/oracle/.bash_profile".
+### 15. Thêm một tham chiếu đến tệp "setenv.sh" ở cuối tệp "/home/oracle/.bash_profile".
 
 ```bash
 echo ". /home/oracle/scripts/setEnv.sh" >> /home/oracle/.bash_profile
 ```
 
-### 15. Tạo script "start_all.sh" Khởi động Oracle Database và Listener và "stop_all.sh" Dừng Oracle Database và Listener. có thể được gọi từ startup/shutdown service. Chắc chắn rằng quyền sở hữu và quyền là chính xác.
+### 16. Tạo script "start_all.sh" Khởi động Oracle Database và Listener và "stop_all.sh" Dừng Oracle Database và Listener. có thể được gọi từ startup/shutdown service. Chắc chắn rằng quyền sở hữu và quyền là chính xác.
 
 ```bash
 cat > /home/oracle/scripts/start_all.sh <<EOF
@@ -264,14 +274,14 @@ chmod u+x /home/oracle/scripts/*.sh
 ~/scripts/start_all.sh
 ~/scripts/stop_all.sh
 
-### 16. Copy file oracle software từ windown vào linux và install
+### 17. Copy file oracle software từ windown vào linux và install
 - Trong cmd window:
 
 ```bash
 scp -r "D:\tools\oracle\oracle-database-19c\V982063-01.zip" oracle@172.16.8.212:/u01/app/oracle/product/19.3.0/dbhome_1
 ```
 
-### 17. Kiểm tra xem tồn tại file đã copy hay chưa và di chuyển vào thư mục $ORACLE_HOME Unzip software:
+### 18. Kiểm tra xem tồn tại file đã copy hay chưa và di chuyển vào thư mục $ORACLE_HOME Unzip software:
 
 ```bash
 cd $ORACLE_HOME
@@ -279,37 +289,37 @@ ls - l
 unzip -oq V982063-01.zip
 ```
 
-### 18. Fake Oracle Linux 7
+### 19. Fake Oracle Linux 7
 ```bash
 export CV_ASSUME_DISTID=OEL7.6
 ./runInstaller
 ```
 
-### 19. Khi Installer windows mở ra, chọn như bên dưới:
+### 20. Khi Installer windows mở ra, chọn như bên dưới:
 
-![Mô tả ảnh](../images/install01.png)
+![attribute image](../images/install-oracle-software/install01.png)
 
-![Mô tả ảnh](../images/install02.png)
+![attribute image](../images/install-oracle-software/install02.png)
 
-![Mô tả ảnh](../images/install03.png)
+![attribute image](../images/install-oracle-software/install03.png)
 
-![Mô tả ảnh](../images/install04.png)
+![attribute image](../images/install-oracle-software/install04.png)
 
-![Mô tả ảnh](../images/install05.png)
+![attribute image](../images/install-oracle-software/install05.png)
 
-![Mô tả ảnh](../images/install06.png)
+![attribute image](../images/install-oracle-software/install06.png)
 
-![Mô tả ảnh](../images/install07.png)
+![attribute image](../images/install-oracle-software/install07.png)
 
 Trong  window installer dưới, chọn Save Response File.
 
-![Mô tả ảnh](../images/install08.png)
+![attribute image](../images/install-oracle-software/install08.png)
 
-![Mô tả ảnh](../images/install09.png)
+![attribute image](../images/install-oracle-software/install09.png)
 
 Bấm vào Cancel button
 
-![Mô tả ảnh](../images/install10.png)
+![attribute image](../images/install-oracle-software/install10.png)
 
 - KIêm tra response file vừa tạo:
 
@@ -323,16 +333,16 @@ cat /home/oracle/db.rsp
 chmod 600 /home/oracle/db.rsp
 ```
 
-### 20. Bắt đầu installer với silent mode 
+### 21. Bắt đầu installer với silent mode 
 
 ```bash
 $ORACLE_HOME/runInstaller -silent -responseFile /home/oracle/db.rsp 
 ```
 
-![Mô tả ảnh](../images/install01.png)
+![attribute image](../images/install-oracle-software/install01.png)
 
 
-### 21. Xác minh rằng SQL*Plus chạy từ Oracle home.
+### 22. Xác minh rằng SQL*Plus chạy từ Oracle home.
 
 ```bash
 which sqlplus
