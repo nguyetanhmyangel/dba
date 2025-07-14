@@ -128,6 +128,7 @@ Vào SQL*Plus và chạy script:
 ```bash
 @?/demo/schema/human_resources/hr_main.sql
 ls
+```
 
 ? là shortcut đại diện cho $ORACLE_HOME.
 
@@ -147,18 +148,6 @@ Sau khi cài xong, xác nhận lại xem HR Schema đã có chưa:
 SELECT COUNT(*) FROM HR.EMPLOYEES;
 SELECT USERNAME, ACCOUNT_STATUS FROM DBA_USERS WHERE USERNAME = 'HR';
 ```
-
-Kết quả mong muốn là: 
-
-  COUNT(*)
-----------
-       xxx
-
-1 row selected.
-
-USERNAME    ACCOUNT_STATUS
------------ ----------------
-HR          OPEN
 
 ### 11. Thoát khỏi Sqlplus, sau đó kiểm tra xem mục kết nối đến oradb đã được thêm vào tệp tnsnames.ora hay chưa.
 
