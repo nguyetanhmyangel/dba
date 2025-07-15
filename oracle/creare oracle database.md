@@ -6,11 +6,37 @@ echo $ORACLE_HOME
 echo $ORACLE_SID
 ```
 
-### 2. Xác minh rằng không có listener nào đang chạy trong hệ thống
+### 2. Xác minh rằng không có listener nào đang chạy trong hệ thống. Việc này, không bắt buộc, nhưng là một bước kiểm tra quan trọng để tránh xung đột hoặc lỗi trong quá trình cài đặt, nhất là khi:
+
+- Tạo CDB/PDB mới
+
+- Có nhiều DB cùng lúc
+
+- Dùng file .rsp có cấu hình mạng
+
+- Dùng cổng 1521 mặc định
 
 ```bash
+-- Kiểm tra trạng thái listener
 lsnrctl status 
+-- Kiểm tra process listener
 ps -ef | grep lsn 
+```
+
+- Nếu đã có listener và muốn xóa đi để tạo lại cho sạch (ví dụ để tránh lỗi, đổi tên listener, hoặc thay đổi port), có thể xóa listener hiện tại một cách an toàn theo các bước dưới đây:
+
+```bash
+-- Kiểm tra listener hiện tại 
+lsnrctl status
+-- Dừng listener lsnrctl stop [alias_listener], mặc định là LISTENER
+lsnrctl stop LISTENER
+-- di chuyển đến thư mục chứa listener & tnsnames.ora, nếu file tồn tại thì backup
+cd $ORACLE_HOME/network/admin
+[ -f listener.ora ] && mv listener.ora listener.ora.bak
+[ -f tnsnames.ora ] && mv tnsnames.ora tnsnames.ora.bak
+-- Kiểm tra tiến trình, nếu còn thì kill
+ps -ef | grep tnslsnr
+kill -9 <pid>
 ```
 
 ### 3. Tạo 1 listener mới 
@@ -33,30 +59,46 @@ dbca
 
 ### 6. Tại cửa sổ dbca, làm các bước như sau:
 
-![attribute image](../images/create-oracle-db/dbca1.png)
+![attribute image](../images/create-oracle-db/noncdb1.png)
 
-![attribute image](../images/create-oracle-db/dbca2.png)
+![attribute image](../images/create-oracle-db/dnoncdb2ca2.png)
 
-![attribute image](../images/create-oracle-db/dbca3.png)
+![attribute image](../images/create-oracle-db/noncdb3.png)
 
-![attribute image](../images/create-oracle-db/dbca4.png)
+![attribute image](../images/create-oracle-db/noncdb4.png)
 
-![attribute image](../images/create-oracle-db/dbca5.png)
+![attribute image](../images/create-oracle-db/noncdb5.png)
 
-![attribute image](../images/create-oracle-db/dbca6.png)
+![attribute image](../images/create-oracle-db/noncdb6.png)
 
-![attribute image](../images/create-oracle-db/dbca7.png)
+![attribute image](../images/create-oracle-db/noncdb7.png)
+
+![attribute image](../images/create-oracle-db/noncdb8.png)
+
+![attribute image](../images/create-oracle-db/noncdb9.png)
+
+![attribute image](../images/create-oracle-db/noncdb10.png)
+
+![attribute image](../images/create-oracle-db/noncdb11.png)
+
+![attribute image](../images/create-oracle-db/noncdb12.png)
+
+![attribute image](../images/create-oracle-db/noncdb13.png)
+
+![attribute image](../images/create-oracle-db/noncdb14.png)
+
+![attribute image](../images/create-oracle-db/noncdb15.png)
 
 ### 7. Kiểm tra tham số dbOptions của response file oradb-noncdb.rsp:
 
 ```bash
 grep dbOptions /home/oracle/oradb-noncdb.rsp
 ```
-Response oradb-noncdb.rsp không trả lại gì ,điều này có nghĩa là nếu chúng ta tạo cơ sở dữ liệu chỉ sử dụng tệp phản hồi, tất cả các tùy chọn cơ sở dữ liệu sẽ được tạo, điều mà chúng ta không muốn.
+- Response oradb-noncdb.rsp không trả lại gì ,điều này có nghĩa là nếu chúng ta tạo cơ sở dữ liệu chỉ sử dụng tệp phản hồi, tất cả các tùy chọn cơ sở dữ liệu sẽ được tạo, điều mà chúng ta không muốn.
 
-Để giải quyết vấn đề này, chúng ta sẽ truyền dbOptions vào dòng lệnh dbca.
+- Để giải quyết vấn đề này, chúng ta sẽ truyền dbOptions vào dòng lệnh dbca.
 
-Lưu ý: Tệp phản hồi cũng không chứa mật khẩu mà chúng ta đã nhập trong cửa sổ dbca.Khi chúng ta sử dụng tệp phản hồi này để tạo cơ sở dữ liệu, nó sẽ nhắc nhập password của SYS hay SYSTEM users.
+- Lưu ý: Tệp phản hồi cũng không chứa mật khẩu mà chúng ta đã nhập trong cửa sổ dbca.Khi chúng ta sử dụng tệp phản hồi này để tạo cơ sở dữ liệu, nó sẽ nhắc nhập password của SYS hay SYSTEM users.
 
 ```bash
 dbca -createDatabase -silent -responseFile /home/oracle/oradb-noncdb.rsp -dbOptions JSERVER:true,DV:false,APEX:false,OMS:false,SPATIAL:false,IMEDIA:false,ORACLE_TEXT:false,CWMLITE:false -sampleSchema true

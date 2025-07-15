@@ -30,7 +30,7 @@ Nói đơn giản:
 |-----------|-----------------------------------------------------------------------------------|-----------------------------------|
 | `USER_`   | Thông tin về đối tượng **do user hiện tại sở hữu**                                | `USER_TABLES`, `USER_TAB_COLUMNS` |
 | `ALL_`    | Thông tin về đối tượng user **có quyền truy cập** (không cần sở hữu)              | `ALL_TABLES`, `ALL_VIEWS`         |
-| `DBA_`    | Thông tin **tất cả các đối tượng trong DB** (chỉ xem được nếu bạn có quyền `DBA`) | `DBA_USERS`, `DBA_TABLES`         |
+| `DBA_`    | Thông tin **tất cả các đối tượng trong DB** (chỉ xem được nếu có quyền `DBA`)     | `DBA_USERS`, `DBA_TABLES`         |
 | `V$`      | View động – thống kê hoạt động runtime của DB                                     | `V$SESSION`, `V$INSTANCE`         |
 
 ### 4. MỘT SỐ VIEW THƯỜNG DÙNG
@@ -58,7 +58,7 @@ SELECT * FROM ROLE_SYS_PRIVS;
 SELECT * FROM DBA_TABLESPACES;
 SELECT * FROM DBA_DATA_FILES;
 
--- Xem danh sách bảng sở hữu
+-- Xem danh sách bảng user hiện tại sở hữu
 SELECT table_name FROM user_tables;
 
 -- Xem thông tin chi tiết bảng, ví dụ: EMPLOYEES
@@ -71,27 +71,40 @@ SELECT index_name, column_name
 FROM user_ind_columns 
 WHERE table_name = 'EMPLOYEES';
 
--- Kiểm tra các sequence bạn sở hữu
+-- Kiểm tra các sequence user hiện tại sở hữu
 SELECT sequence_name FROM user_sequences;
+
+-- Kiểm tra SID, serial number, và status của session hiện tại
+SELECT SID, SERIAL#, STATUS FROM V$SESSION WHERE USERNAME='SYSTEM'; 
+
+-- Mô tả cấu trúc của V$TABLESPACE và DBA_TABLESPACES
+DESC V$TABLESPACE
+DESC DBA_TABLESPACES
+
+-- Lấy tên tablespace trong database và datafiles trong mỗi tablespace.
+SELECT S.NAME TABLESPACE_NAME, D.NAME DATAFILE
+FROM V$TABLESPACE S, V$DATAFILE D
+WHERE S.TS# = D.TS#
+ORDER BY 1; 
 ```
 ### 5. Ý nghĩa của các tiền tố & các tình huống cần sử dụng:
 
 | Tiền tố | Ý nghĩa                                        |
 |---------|------------------------------------------------|
-| `USER_` | Những gì bạn **sở hữu**                        |
-| `ALL_`  | Những gì bạn **có thể truy cập**               |
+| `USER_` | Những gì user hiện tại **sở hữu**              |
+| `ALL_`  | Những gì user hiện tại **có thể truy cập**     |
 | `DBA_`  | Những gì toàn bộ **database chứa**             |
 | `V$`    | Thống kê về **hoạt động runtime** của hệ thống |
 
 
-| Tình huống                 | View nên dùng      |
-|----------------------------|--------------------|
-| Tên các bảng của bạn       | `USER_TABLES`      |
-| Cột trong bảng             | `USER_TAB_COLUMNS` |
-| Quyền của user hiện tại    | `USER_SYS_PRIVS`   |
-| Các bảng bạn có quyền xem  | `ALL_TABLES`       |
-| Tất cả user trong hệ thống | `DBA_USERS`        |
-| Trạng thái phiên           | `V$SESSION`        |
-| Tên sequence bạn tạo       | `USER_SEQUENCES`   |
-| Tên trigger                | `USER_TRIGGERS`    |
+| Tình huống                          | View nên dùng      |
+|-------------------------------------|--------------------|
+| Tên các bảng của user hiện tại      | `USER_TABLES`      |
+| Cột trong bảng                      | `USER_TAB_COLUMNS` |
+| Quyền của user hiện tại             | `USER_SYS_PRIVS`   |
+| Các bảng user hiện tại có quyền xem | `ALL_TABLES`       |
+| Tất cả user trong hệ thống          | `DBA_USERS`        |
+| Trạng thái phiên                    | `V$SESSION`        |
+| Tên sequence user hiện tại tạo      | `USER_SEQUENCES`   |
+| Tên trigger                         | `USER_TRIGGERS`    |
 
