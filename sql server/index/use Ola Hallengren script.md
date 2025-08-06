@@ -23,7 +23,7 @@ Mở SQL Server Management Studio (SSMS) → chạy file MaintenanceSolution.sql
 | `CommandLog`             | Ghi lại lịch sử chạy các command                                        |
 | `CommandExecute`         | Thực thi command chính có log                                           |
 
-### 3. Rebuild hoặc Reorganize Index thủ công
+### 3. Rebuild hoặc Reorganize Index
 
 Chạy câu lệnh dưới đây thủ công để rebuild index cho toàn bộ database:
 
@@ -48,17 +48,21 @@ Giải thích các tham số:
 
 - @UpdateStatistics = 'ALL': cập nhật statistics sau khi xử lý index
 
-### 4. Tạo SQL Agent Job để tự động chạy hàng tuần
+- USER_DATABASES: tất cả các database do bạn tạo (không bao gồm master, msdb, tempdb…)
 
-Nếu chưa dùng job sẵn có, có thể tạo job thủ công như sau:
+- Phân loại fragment:
 
-SQL Server Agent → Chuột phải Jobs → New Job
+    1. Low: bỏ qua
 
-Tab Steps → New Step:
+    2. Medium (>5%, <30%): REORGANIZE
+
+    3. High (>30%): REBUILD
+
+### 4. Rebuild hoặc Reorganize Index cho các Db xác định
 
 ```bash
 EXECUTE dbo.IndexOptimize
-    @Databases = 'SVT_SORLAWINDS',
+    @Databases = 'XYZ,ABC',
     @FragmentationLow = NULL,
     @FragmentationMedium = 'INDEX_REORGANIZE',
     @FragmentationHigh = 'INDEX_REBUILD_ONLINE',
@@ -69,7 +73,7 @@ EXECUTE dbo.IndexOptimize
 
 - Nếu muốn rebuild offline sửa dòng @FragmentationHigh = 'INDEX_REBUILD_OFFLINE'
 
-- Nếu muốn xử lý luôn cả các index nhỏ, bạn chỉ cần đặt @MinNumberOfPages = 0 hoặc giá trị nhỏ hơn:
+- Nếu muốn xử lý luôn cả các index nhỏ, chỉ cần đặt @MinNumberOfPages = 0 hoặc giá trị nhỏ hơn:
 
 ```bash
 EXECUTE dbo.IndexOptimize
@@ -79,7 +83,45 @@ EXECUTE dbo.IndexOptimize
     @FragmentationHigh = 'INDEX_REBUILD_ONLINE',
     @FragmentationLevel1 = 5,
     @FragmentationLevel2 = 30,
-    @MinNumberOfPages = 0, -- 👈 Xử lý cả index nhỏ
+    @MinNumberOfPages = 0, -- Xử lý cả index nhỏ
     @UpdateStatistics = 'ALL';
 ```
+
+### 5. Kiểm tra toàn vẹn database (CHECKDB)
+
+EXECUTE dbo.DatabaseIntegrityCheck
+@Databases = 'USER_DATABASES',
+@LogToTable = 'Y';
+
+
+### 6. Backup FULL
+
+EXECUTE dbo.DatabaseBackup
+@Databases = 'USER_DATABASES',
+@BackupType = 'FULL',
+@BackupDirectory = 'D:\SQLBackups\Full',
+@CleanupTime = 168,  -- xóa file cũ sau 7 ngày
+@LogToTable = 'Y';
+
+
+### 7. Backup Differential
+
+EXECUTE dbo.DatabaseBackup
+@Databases = 'USER_DATABASES',
+@BackupType = 'DIFF',
+@BackupDirectory = 'D:\SQLBackups\Diff',
+@CleanupTime = 72,
+@LogToTable = 'Y';
+
+
+### 8. Backup LOG
+
+EXECUTE dbo.DatabaseBackup
+@Databases = 'USER_DATABASES',
+@BackupType = 'LOG',
+@BackupDirectory = 'D:\SQLBackups\Log',
+@CleanupTime = 48,
+@LogToTable = 'Y';
+
+- Chú ý: chỉ chạy backup LOG nếu database ở chế độ FULL hoặc BULK_LOGGED.
 
