@@ -10,17 +10,21 @@
 
 ### 2.Xác định tài khoản dịch vụ của SQL Server
 
+```bash
 SELECT servicename, service_account
 FROM sys.dm_server_services
 WHERE servicename LIKE 'SQL Server (%';
+```
 
 ### 3.Kiểm tra đã bật chưa (SQL Server 2016+)
 
+```bash
 SELECT
     servicename,
     instant_file_initialization_enabled AS [IFI_enable]
 FROM sys.dm_server_services
 WHERE servicename LIKE 'SQL Server (%';
+```
 
 ### 4. Cấp quyền “Perform volume maintenance tasks”
 
