@@ -42,8 +42,8 @@ sudo mkfs.ext4 /dev/sdb1
 ### 5. Tạo Thư mục và Mount Point 
 
 ```bash
-sudo mkdir /u1
-sudo mount /dev/sdb1 /u2
+sudo mkdir /u02
+sudo mount /dev/sdb1 /u02
 ```
 
 ### 6. Cấu hình Mount tự động khi khởi động (Fstab)
@@ -58,7 +58,7 @@ sudo blkid
 
 ```bash
 sudo vi /etc/fstab
-UUID=YOUR_UUID_FOR_SDB1 /u2 ext4 defaults 0 2
+UUID=YOUR_UUID_FOR_SDB1 /u02 ext4 defaults 0 2
 ```
 
 - Mount thủ công để kiểm tra trước khi reboot:
