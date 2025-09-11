@@ -49,32 +49,36 @@ Bước 1: Mở PowerShell với quyền admin trên một node.
 Bước 2: Import module (nếu cần):
 
 ```bash
-textImport-Module FailoverClusters
+Import-Module FailoverClusters
 ```
 
 Bước 3: Kiểm tra quorum:
 
 ```bash
-textGet-ClusterQuorum -Cluster "SQLCL01"  # Thay SQLCL01 bằng tên cluster
+Get-ClusterQuorum -Cluster "SQLCL01"  # Thay SQLCL01 bằng tên cluster
 ```
 
 Kết quả sẽ hiển thị:
-
-QuorumType: NodeMajority (không witness), NodeAndDiskMajority (shared disk), NodeAndFileShareMajority (file share witness), DiskOnly (cũ).
 
 QuorumResource: Nếu dùng witness, sẽ chỉ định resource (disk hoặc file share).
 
 Bước 4: Nếu dùng File Share Witness, xem chi tiết folder:
 
 ```bash
-textGet-ClusterResource | Where-Object { $_.ResourceType -eq "File Share Witness" }
-```
+# Lấy resource File Share Witness
+$witness = Get-ClusterResource | Where-Object { $_.ResourceType -eq "File Share Witness" }
 
-Kết quả sẽ hiển thị đường dẫn file share (ví dụ: \servername\QUORUM\SQLCL01).
-Sau đó, dùng lệnh để xem folder từ xa:
+# Lấy các parameter (bao gồm đường dẫn)
+Get-ClusterParameter -InputObject $witness
+
+```
+Kết quả sẽ hiển thị một danh sách, trong đó có key tên SharePath (chính là UNC path của File Share Witness).
+
+Nếu muốn chỉ in ra đường dẫn:
 
 ```bash
-textGet-ChildItem "\\servername\QUORUM\SQLCL01"  # Thay bằng đường dẫn thực tế
+(Get-ClusterParameter -InputObject $witness | Where-Object { $_.Name -eq "SharePath" }).Value
+
 ```
 
 Nếu lỗi quyền, đăng nhập server chứa file share và kiểm tra thủ công.

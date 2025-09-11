@@ -1,4 +1,4 @@
-# Logical File Name và Đường dẫn gốc từ backup
+# Lẫy Logical File Name và Đường dẫn gốc từ backup
 ```bash
 RESTORE FILELISTONLY FROM DISK = N'E:\backup\YOUR-DB.bak';
 ```
