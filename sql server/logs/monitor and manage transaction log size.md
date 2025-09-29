@@ -40,6 +40,9 @@ DECLARE @LargeTransactionMB DECIMAL(18,2);
 DECLARE @SQL_BackupLog NVARCHAR(MAX) = '';
 DECLARE @TotalVLFCount INT = 0;
 DECLARE @IsInAG BIT = 0;
+-- FIX 2: Khai báo các biến bị thiếu
+DECLARE @SQL_ShrinkFile NVARCHAR(MAX);
+DECLARE @SQL_ModifyFile NVARCHAR(MAX);
 
 BEGIN TRY
     -- 1. Kiểm tra xem DB có trong AG không
@@ -83,7 +86,8 @@ BEGIN TRY
     DROP TABLE #LogSpace;
 
     -- 5. Kiểm tra không gian đĩa trống
-    SELECT TOP 1 @DiskFreeMB = total_bytes / 1024.0 / 1024.0 - used_bytes / 1024.0 / 1024.0
+    -- FIX 3: Sử dụng cột 'available_bytes' thay vì 'used_bytes' không tồn tại
+    SELECT TOP 1 @DiskFreeMB = available_bytes / 1024.0 / 1024.0
     FROM sys.dm_os_volume_stats(DB_ID(), (SELECT TOP 1 file_id FROM sys.master_files WHERE database_id = DB_ID() AND type_desc = 'LOG'));
 
     -- 6. Ước lượng giao dịch lớn dựa trên bảng/index lớn nhất
@@ -98,7 +102,14 @@ BEGIN TRY
     -- 7. Kiểm tra lịch sử backup để tìm giao dịch lớn
     IF @RecoveryModel IN ('FULL', 'BULK_LOGGED')
     BEGIN
-        SELECT @LargeTransactionMB = GREATEST(@LargeTransactionMB, MAX(CAST(b.backup_size / 1024.0 / 1024.0 AS DECIMAL(18,2))) * 2)
+        -- FIX 1: Thay thế GREATEST bằng cấu trúc tương thích
+        SELECT @LargeTransactionMB =
+            (SELECT MAX(v)
+             FROM (VALUES
+                (@LargeTransactionMB),
+                (MAX(CAST(b.backup_size / 1024.0 / 1024.0 AS DECIMAL(18,2))) * 2)
+             ) AS value(v)
+            )
         FROM msdb.dbo.backupset b
         WHERE b.database_name = @DBName
           AND b.type IN ('L', 'I')
@@ -132,12 +143,27 @@ BEGIN TRY
         -- 10. Tính kích thước mục tiêu
         IF @PeakUncompressedMB IS NULL OR @PeakUncompressedMB = 0
         BEGIN
-            SET @TargetMB = CEILING(GREATEST(@DataSizeMB * 0.2, @CurrentUsedMB * 2, @MinLogSizeMB, @LargeTransactionMB));
+            -- FIX 1: Thay thế GREATEST bằng cấu trúc tương thích
+            SELECT @TargetMB = CEILING(val) FROM (
+                SELECT MAX(v) as val FROM (VALUES 
+                    (@DataSizeMB * 0.2), 
+                    (@CurrentUsedMB * 2), 
+                    (CAST(@MinLogSizeMB AS DECIMAL(18,2))), 
+                    (@LargeTransactionMB)
+                ) AS value(v)
+            ) as t;
             SET @Warning = @Warning + N'!!! CẢNH BÁO: Không tìm thấy dữ liệu backup log trong 30 ngày cho file ' + @LogicalName + '. Kích thước đề xuất (' + CAST(@TargetMB AS VARCHAR) + ' MB) dựa trên 20% kích thước file dữ liệu, mức sử dụng hiện tại, và giao dịch lớn.' + CHAR(13) + CHAR(10);
         END
         ELSE
         BEGIN
-            SET @TargetMB = CEILING(GREATEST(@PeakUncompressedMB * 1.5, @MinLogSizeMB, @LargeTransactionMB));
+            -- FIX 1: Thay thế GREATEST bằng cấu trúc tương thích
+            SELECT @TargetMB = CEILING(val) FROM (
+                SELECT MAX(v) as val FROM (VALUES 
+                    (@PeakUncompressedMB * 1.5), 
+                    (CAST(@MinLogSizeMB AS DECIMAL(18,2))), 
+                    (@LargeTransactionMB)
+                ) AS value(v)
+            ) as t;
         END
 
         -- 11. Tối ưu VLF: Điều chỉnh kích thước để số VLF nằm trong khoảng 50-300
@@ -156,7 +182,7 @@ BEGIN TRY
         END
         ELSE IF @EstimatedVLF > @MaxVLFPerFile
         BEGIN
-            SET @FileGrowthMB = CEILING(@TargetMB / @MaxVLFPerFile);
+            SET @FileGrowthMB = CEILING(CAST(@TargetMB AS DECIMAL(18,2)) / @MaxVLFPerFile);
             SET @VLFWarning = '!!! CẢNH BÁO: Số VLF ước tính (' + CAST(@EstimatedVLF AS VARCHAR) + ') quá cao. Đã điều chỉnh FileGrowth lên ' + CAST(@FileGrowthMB AS VARCHAR) + ' MB để tối ưu VLF.';
         END
         ELSE
@@ -213,13 +239,13 @@ MODIFY FILE (NAME = N''' + @LogicalName + ''', SIZE = ' + CAST(@TargetMB AS VARC
     PRINT '================================================================================';
     PRINT '';
     PRINT '--- THÔNG TIN HIỆN TẠI ---';
-    PRINT 'Database trong AvailabilityسازGroup: ' + CASE WHEN @IsInAG = 1 THEN 'Có' ELSE 'Không' END;
+    PRINT 'Database trong Availability Group: ' + CASE WHEN @IsInAG = 1 THEN 'Có' ELSE 'Không' END;
     PRINT 'Recovery Model : ' + @RecoveryModel;
     PRINT 'Log Reuse Wait : ' + @LogReuseWait;
-    PRINT 'Tổng kích thước Data (MB) : ' + CAST(@DataSizeMB AS VARCHAR(30));
-    PRINT 'Mức sử dụng Log hiện tại (MB): ' + CAST(@CurrentUsedMB AS VARCHAR(30));
-    PRINT 'Không gian đĩa trống (MB) : ' + CAST(@DiskFreeMB AS VARCHAR(30));
-    PRINT 'Ước lượng giao dịch lớn (MB): ' + CAST(@LargeTransactionMB AS VARCHAR(30));
+    PRINT 'Tổng kích thước Data (MB) : ' + ISNULL(CAST(@DataSizeMB AS VARCHAR(30)), 'N/A');
+    PRINT 'Mức sử dụng Log hiện tại (MB): ' + ISNULL(CAST(@CurrentUsedMB AS VARCHAR(30)), 'N/A');
+    PRINT 'Không gian đĩa trống (MB) : ' + ISNULL(CAST(@DiskFreeMB AS VARCHAR(30)), 'N/A');
+    PRINT 'Ước lượng giao dịch lớn (MB): ' + ISNULL(CAST(@LargeTransactionMB AS VARCHAR(30)), 'N/A');
     PRINT 'Tổng số VLF: ' + CAST(@TotalVLFCount AS VARCHAR(30));
     PRINT '';
 
@@ -256,6 +282,7 @@ MODIFY FILE (NAME = N''' + @LogicalName + ''', SIZE = ' + CAST(@TargetMB AS VARC
     END
 
     PRINT '-- Bước 2: Shrink log để giải phóng không gian không sử dụng (chạy nếu cần).';
+    -- Sử dụng STRING_AGG, tương thích với SQL Server 2017+
     SELECT @FileInfo = STRING_AGG(SQL_ShrinkFile, CHAR(13) + CHAR(10)) FROM @LogFiles;
     PRINT @FileInfo;
     PRINT '';
@@ -348,7 +375,6 @@ BEGIN
         ExecutionTime DATETIME2(0) NOT NULL,
         ErrorMessage NVARCHAR(MAX) NULL
     );
-    CREATE INDEX IX_LogOptimizationAudit_ExecutionTime ON dbo.LogOptimizationAudit (ExecutionTime);
 END
 GO
 
@@ -356,6 +382,7 @@ GO
 IF OBJECT_ID('dbo.usp_UpdateLogPeakUsage', 'P') IS NOT NULL
     DROP PROCEDURE dbo.usp_UpdateLogPeakUsage;
 GO
+
 CREATE PROCEDURE dbo.usp_UpdateLogPeakUsage
 AS
 BEGIN
@@ -371,25 +398,35 @@ BEGIN
         USING (
             SELECT
                 d.name AS DatabaseName,
-                ls.log_since_last_backup_mb AS CurrentUsedLogMB,
-                CAST(total_log_size_in_bytes / 1048576.0 AS DECIMAL(18, 2)) AS CurrentTotalLogSizeMB
+                ls.log_since_last_log_backup_mb AS CurrentUsedLogMB,
+                ls.total_log_size_mb AS CurrentTotalLogSizeMB
             FROM sys.databases d
             CROSS APPLY sys.dm_db_log_stats(d.database_id) ls
             WHERE
                 d.database_id > 4
                 AND d.state_desc = 'ONLINE'
                 AND d.recovery_model_desc <> 'SIMPLE'
-                AND total_log_size_in_bytes > 0
+                AND ls.total_log_size_mb > 0
         ) AS Source
         ON Target.DatabaseName = Source.DatabaseName
-        WHEN MATCHED AND Source.CurrentUsedLogMB > Target.PeakUsedLogMB THEN
-            UPDATE SET
-                PeakUsedLogMB = Source.CurrentUsedLogMB,
-                PeakTotalLogSizeMB = Source.CurrentTotalLogSizeMB,
-                PeakTime = @CurrentTime,
-                LastChecked = @CurrentTime
         WHEN MATCHED THEN
-            UPDATE SET LastChecked = @CurrentTime
+            UPDATE SET
+                PeakUsedLogMB = CASE 
+                    WHEN Source.CurrentUsedLogMB > Target.PeakUsedLogMB 
+                    THEN Source.CurrentUsedLogMB 
+                    ELSE Target.PeakUsedLogMB 
+                END,
+                PeakTotalLogSizeMB = CASE 
+                    WHEN Source.CurrentUsedLogMB > Target.PeakUsedLogMB 
+                    THEN Source.CurrentTotalLogSizeMB 
+                    ELSE Target.PeakTotalLogSizeMB 
+                END,
+                PeakTime = CASE 
+                    WHEN Source.CurrentUsedLogMB > Target.PeakUsedLogMB 
+                    THEN @CurrentTime 
+                    ELSE Target.PeakTime 
+                END,
+                LastChecked = @CurrentTime
         WHEN NOT MATCHED BY TARGET THEN
             INSERT (DatabaseName, PeakUsedLogMB, PeakTotalLogSizeMB, PeakTime, LastChecked)
             VALUES (Source.DatabaseName, Source.CurrentUsedLogMB, Source.CurrentTotalLogSizeMB, @CurrentTime, @CurrentTime);
@@ -401,10 +438,10 @@ BEGIN
 END
 GO
 
--- Stored procedure để phân tích và tối ưu log
 IF OBJECT_ID('dbo.usp_OptimizeTransactionLog', 'P') IS NOT NULL
-    DROP PROCEDURE dbo.usp_OptimizeTransactionLog;
+DROP PROCEDURE dbo.usp_OptimizeTransactionLog;
 GO
+
 CREATE PROCEDURE dbo.usp_OptimizeTransactionLog
     @DatabaseName NVARCHAR(MAX) = NULL, -- Lọc DB, cách nhau bằng dấu phẩy
     @BackupPath NVARCHAR(500) = N'NUL', -- Đường dẫn backup
@@ -412,7 +449,7 @@ CREATE PROCEDURE dbo.usp_OptimizeTransactionLog
     @VLFThreshold INT = 300, -- Ngưỡng VLF
     @MinLogSizeMB INT = 1024, -- Kích thước log tối thiểu
     @MinLogSizeFilterMB INT = 0, -- Lọc DB theo kích thước log
-    @Verbose BIT = 0, -- 0 để giảm đầu ra
+    @Verbose BIT = 1, -- 1: Hiển thị chi tiết
     @DryRun BIT = 1 -- 1: Chỉ sinh script, 0: Thực thi
 AS
 BEGIN
@@ -420,8 +457,9 @@ BEGIN
 
     -- Bảng tạm lưu kết quả
     DECLARE @LogFiles TABLE (
-        DatabaseName SYSNAME,
+        DatabaseName SYSNAME PRIMARY KEY,
         LogicalName SYSNAME,
+        FileId INT,
         CurrentSizeMB DECIMAL(18,2),
         CurrentUsedMB DECIMAL(18,2),
         PeakUsedLogMB DECIMAL(18,2),
@@ -441,16 +479,15 @@ BEGIN
         SQL_ModifyFile NVARCHAR(MAX)
     );
 
-    -- Tạo bảng tạm #LogSpace
+    -- Bảng tạm cho DBCC SQLPERF và DBCC LOGINFO
     CREATE TABLE #LogSpace (
-        DBName SYSNAME,
+        DBName SYSNAME PRIMARY KEY,
         LogSizeMB DECIMAL(18,2),
         LogUsedPct DECIMAL(5,2),
         Status INT
     );
 
-    -- Tạo bảng tạm #VLF
-    CREATE TABLE #VLF (
+    CREATE TABLE #VLF_Temp (
         FileId INT,
         FileSize BIGINT,
         StartOffset BIGINT,
@@ -461,173 +498,148 @@ BEGIN
     );
 
     BEGIN TRY
-        -- Chèn dữ liệu vào #LogSpace
-        INSERT INTO #LogSpace
-        EXEC('DBCC SQLPERF(LOGSPACE)');
+        -- BƯỚC 1: Kiểm tra điều kiện đầu vào
+        IF @BackupPath <> N'NUL'
+        BEGIN
+            DECLARE @PathExists BIT;
+            DECLARE @CheckPath TABLE (FileExists BIT, DirectoryExists BIT, ParentDirectoryExists BIT);
+            INSERT INTO @CheckPath EXEC master.dbo.xp_fileexist @BackupPath;
+            SELECT @PathExists = FileExists FROM @CheckPath;
+            IF @PathExists = 0
+            BEGIN
+                RAISERROR ('Đường dẫn backup %s không tồn tại.', 16, 1, @BackupPath);
+                RETURN;
+            END
+        END
 
-        -- Kiểm tra vai trò AG
+        -- Kiểm tra vai trò Availability Group
         IF EXISTS (SELECT 1 FROM sys.dm_hadr_availability_replica_states WHERE is_local = 1 AND role_desc <> 'PRIMARY')
         BEGIN
             PRINT 'This is a secondary replica in an Availability Group. Script generation is skipped.';
-            DROP TABLE #LogSpace;
-            DROP TABLE #VLF;
             RETURN;
         END
 
-        -- Bảng tạm lưu kích thước file dữ liệu và số file log
-        DECLARE @DataFileSize TABLE (
-            DatabaseName SYSNAME,
-            DataFileSizeMB DECIMAL(18,2),
-            LogFileCount INT
-        );
-        INSERT INTO @DataFileSize
-        SELECT
-            d.name,
-            SUM(CASE WHEN mf.type_desc = 'ROWS' THEN mf.size / 128.0 ELSE 0 END) AS DataFileSizeMB,
-            SUM(CASE WHEN mf.type_desc = 'LOG' THEN 1 ELSE 0 END) AS LogFileCount
-        FROM sys.databases d
-        JOIN sys.master_files mf ON d.database_id = mf.database_id
-        WHERE d.state_desc = 'ONLINE'
-        AND (@DatabaseName IS NULL OR d.name IN (SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@DatabaseName, ',')))
-        GROUP BY d.name;
+        -- BƯỚC 2: Thu thập thông tin Log Space
+        INSERT INTO #LogSpace
+        EXEC('DBCC SQLPERF(LOGSPACE) WITH NO_INFOMSGS');
 
-        -- Bảng tạm lưu kích thước giao dịch lớn
-        DECLARE @LargeTransactions TABLE (
-            DatabaseName SYSNAME,
-            LargeTransactionMB DECIMAL(18,2)
-        );
-        INSERT INTO @LargeTransactions
+        -- BƯỚC 3: Thu thập thông tin file log và dữ liệu
+        INSERT INTO @LogFiles (
+            DatabaseName, LogicalName, FileId, CurrentSizeMB, CurrentUsedMB, PeakUsedLogMB,
+            LargeTransactionMB, DataFileSizeMB, LogFileCount, DiskFreeMB, IsInAG, RecoveryModel, LogReuseWait
+        )
         SELECT
             d.name,
+            mf.name,
+            mf.file_id,
+            mf.size / 128.0 AS CurrentSizeMB,
+            ls.LogSizeMB * (ls.LogUsedPct / 100.0) AS CurrentUsedMB,
+            p.PeakUsedLogMB,
             COALESCE((
                 SELECT MAX(au.total_pages / 128.0) * 2
                 FROM sys.partitions p
                 JOIN sys.allocation_units au ON p.hobt_id = au.container_id
-                WHERE p.object_id IN (SELECT object_id FROM sys.indexes WHERE index_id IN (0, 1))
+                WHERE p.object_id IN (SELECT t.object_id FROM sys.tables t WHERE t.is_ms_shipped = 0)
                 AND p.index_id IN (0, 1)
-                AND p.object_id IN (SELECT object_id FROM sys.tables WHERE schema_name(schema_id) + '.' + name IN (SELECT table_name FROM information_schema.tables WHERE table_catalog = d.name))
-            ), dfs.DataFileSizeMB * 0.1) AS LargeTransactionMB
+                AND p.object_id IN (SELECT object_id FROM sys.tables WHERE schema_name(schema_id) + '.' + name IN
+                    (SELECT table_name FROM information_schema.tables WHERE table_catalog = d.name))
+            ), dfs.DataFileSizeMB * 0.1) AS LargeTransactionMB,
+            dfs.DataFileSizeMB,
+            dfs.LogFileCount,
+            vs.available_bytes / 1048576.0 AS DiskFreeMB,
+            CASE WHEN d.group_database_id IS NOT NULL THEN 1 ELSE 0 END AS IsInAG,
+            d.recovery_model_desc,
+            d.log_reuse_wait_desc
         FROM sys.databases d
-        JOIN @DataFileSize dfs ON d.name = dfs.DatabaseName
-        WHERE d.state_desc = 'ONLINE'
-        AND (@DatabaseName IS NULL OR d.name IN (SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@DatabaseName, ',')));
+        JOIN sys.master_files mf ON d.database_id = mf.database_id
+        JOIN #LogSpace ls ON d.name = ls.DBName
+        LEFT JOIN dbo.LogPeakUsageHistory p ON d.name = p.DatabaseName
+        JOIN (
+            SELECT db.name,
+                   SUM(CASE WHEN mf_inner.type_desc = 'ROWS' THEN mf_inner.size / 128.0 ELSE 0 END) AS DataFileSizeMB,
+                   SUM(CASE WHEN mf_inner.type_desc = 'LOG' THEN 1 ELSE 0 END) AS LogFileCount
+            FROM sys.databases db
+            JOIN sys.master_files mf_inner ON db.database_id = mf_inner.database_id
+            GROUP BY db.name
+        ) dfs ON d.name = dfs.name
+        CROSS APPLY sys.dm_os_volume_stats(d.database_id, mf.file_id) vs
+        WHERE mf.type_desc = 'LOG'
+        AND d.database_id > 4
+        AND d.state_desc = 'ONLINE'
+        AND ls.LogSizeMB >= @MinLogSizeFilterMB
+        AND (@DatabaseName IS NULL OR d.name IN (SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@DatabaseName, ',')))
+        AND d.log_reuse_wait_desc IN ('NOTHING', 'CHECKPOINT', 'LOG_BACKUP');
 
-        -- Lấy thông tin các file log
-        DECLARE @DBName SYSNAME, @FileId INT;
-        DECLARE db_cursor CURSOR LOCAL FAST_FORWARD FOR
-            SELECT d.name, mf.file_id
-            FROM sys.databases d
-            JOIN sys.master_files mf ON d.database_id = mf.database_id
-            JOIN #LogSpace ls ON d.name = ls.DBName
-            WHERE mf.type_desc = 'LOG'
-            AND d.database_id > 4
-            AND d.state_desc = 'ONLINE'
-            AND ls.LogSizeMB >= @MinLogSizeFilterMB
-            AND (@DatabaseName IS NULL OR d.name IN (SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@DatabaseName, ',')))
-            AND d.log_reuse_wait_desc IN ('NOTHING', 'CHECKPOINT', 'LOG_BACKUP');
-        
-        OPEN db_cursor;
-        FETCH NEXT FROM db_cursor INTO @DBName, @FileId;
+        -- BƯỚC 4: Tính VLF Count
+        DECLARE @CurrentDBName SYSNAME, @CurrentFileId INT;
+        DECLARE vlf_cursor CURSOR LOCAL FAST_FORWARD FOR
+            SELECT DatabaseName, FileId FROM @LogFiles;
+        OPEN vlf_cursor;
+        FETCH NEXT FROM vlf_cursor INTO @CurrentDBName, @CurrentFileId;
         WHILE @@FETCH_STATUS = 0
         BEGIN
-            -- Tính VLFCount
-            DECLARE @VLFCount INT;
+            DECLARE @VLFCount INT = 0;
             IF EXISTS (SELECT 1 FROM sys.all_objects WHERE name = 'dm_db_log_info')
             BEGIN
-                SELECT @VLFCount = COUNT(*) 
-                FROM sys.dm_db_log_info(DB_ID(@DBName)) li 
-                WHERE li.file_id = @FileId;
+                SELECT @VLFCount = COUNT(*)
+                FROM sys.dm_db_log_info(DB_ID(@CurrentDBName))
+                WHERE file_id = @CurrentFileId;
             END
             ELSE
             BEGIN
-                TRUNCATE TABLE #VLF;
-                INSERT INTO #VLF EXEC('DBCC LOGINFO([' + @DBName + '])');
-                SELECT @VLFCount = COUNT(*) FROM #VLF WHERE FileId = @FileId;
+                TRUNCATE TABLE #VLF_Temp;
+                INSERT INTO #VLF_Temp
+                EXEC('DBCC LOGINFO (''' + @CurrentDBName + ''') WITH NO_INFOMSGS');
+                SELECT @VLFCount = COUNT(*)
+                FROM #VLF_Temp
+                WHERE FileId = @CurrentFileId;
             END
-
-            INSERT INTO @LogFiles (
-                DatabaseName, LogicalName, CurrentSizeMB, CurrentUsedMB, PeakUsedLogMB, 
-                LargeTransactionMB, DataFileSizeMB, LogFileCount, VLFCount, DiskFreeMB, 
-                IsInAG, RecoveryModel, LogReuseWait
-            )
-            SELECT
-                d.name AS DatabaseName,
-                mf.name AS LogicalName,
-                mf.size / 128.0 AS CurrentSizeMB,
-                ls.LogSizeMB * (ls.LogUsedPct / 100.0) AS CurrentUsedMB,
-                p.PeakUsedLogMB,
-                lt.LargeTransactionMB,
-                dfs.DataFileSizeMB,
-                dfs.LogFileCount,
-                @VLFCount,
-                vs.total_bytes / 1048576.0 - vs.used_bytes / 1048576.0 AS DiskFreeMB,
-                CASE WHEN EXISTS (
-                    SELECT 1 FROM sys.availability_databases_cluster adc
-                    JOIN sys.availability_groups ag ON adc.group_id = ag.group_id
-                    WHERE adc.database_name = d.name
-                ) THEN 1 ELSE 0 END AS IsInAG,
-                d.recovery_model_desc AS RecoveryModel,
-                d.log_reuse_wait_desc AS LogReuseWait
-            FROM sys.databases d
-            JOIN sys.master_files mf ON d.database_id = mf.database_id
-            LEFT JOIN #LogSpace ls ON d.name = ls.DBName
-            LEFT JOIN dbo.LogPeakUsageHistory p ON d.name = p.DatabaseName
-            LEFT JOIN @LargeTransactions lt ON d.name = lt.DatabaseName
-            LEFT JOIN @DataFileSize dfs ON d.name = dfs.DatabaseName
-            CROSS APPLY sys.dm_os_volume_stats(d.database_id, mf.file_id) vs
-            WHERE mf.type_desc = 'LOG'
-            AND d.name = @DBName
-            AND mf.file_id = @FileId;
-
-            FETCH NEXT FROM db_cursor INTO @DBName, @FileId;
+            UPDATE @LogFiles
+            SET VLFCount = @VLFCount
+            WHERE DatabaseName = @CurrentDBName AND FileId = @CurrentFileId;
+            FETCH NEXT FROM vlf_cursor INTO @CurrentDBName, @CurrentFileId;
         END
-        CLOSE db_cursor;
-        DEALLOCATE db_cursor;
+        CLOSE vlf_cursor;
+        DEALLOCATE vlf_cursor;
 
-        -- Tính tỷ lệ log/dữ liệu
-        UPDATE @LogFiles
-        SET LogToDataRatio = CASE WHEN DataFileSizeMB > 0 THEN CurrentSizeMB / DataFileSizeMB ELSE 0 END;
-
-        -- Tính toán kích thước mục tiêu và tối ưu VLF
+        -- BƯỚC 5: Tính toán các chỉ số và sinh câu lệnh SQL
         UPDATE @LogFiles
         SET
-            TargetMB = CEILING(GREATEST(
-                COALESCE(PeakUsedLogMB * @BufferMultiplier, CurrentUsedMB * 2, LargeTransactionMB, @MinLogSizeMB)
-            )),
-            VLFWarning = CASE
-                WHEN LogFileCount > 1 THEN '!!! CẢNH BÁO: Cơ sở dữ liệu có ' + CAST(LogFileCount AS VARCHAR) + ' file log. Nên giảm xuống 1 file để tối ưu hiệu năng.' + CHAR(13) + CHAR(10)
-                ELSE ''
-            END +
-            CASE
-                WHEN VLFCount > @VLFThreshold THEN '!!! CẢNH BÁO: Số VLF hiện tại (' + CAST(VLFCount AS VARCHAR) + ') quá cao. Cần shrink và resize.' + CHAR(13) + CHAR(10)
-                WHEN VLFCount < 50 THEN '!!! CẢNH BÁO: Số VLF hiện tại (' + CAST(VLFCount AS VARCHAR) + ') quá thấp. Cân nhắc tăng kích thước log.' + CHAR(13) + CHAR(10)
-                ELSE ''
-            END +
-            CASE
-                WHEN LogToDataRatio > 0.5 THEN '!!! CẢNH BÁO: Tỷ lệ log/dữ liệu (' + CAST(LogToDataRatio AS VARCHAR) + ') > 50%. Cần shrink và kiểm tra workload.' + CHAR(13) + CHAR(10)
-                ELSE ''
-            END,
-            SQL_BackupLog = CASE
-                WHEN RecoveryModel IN ('FULL', 'BULK_LOGGED') AND LogReuseWait NOT IN ('NOTHING', 'CHECKPOINT')
-                THEN 'BACKUP LOG [' + DatabaseName + '] TO DISK = ' + QUOTENAME(@BackupPath, '''') + ';'
-                ELSE ''
-            END,
-            SQL_ShrinkFile = CASE
-                WHEN VLFCount > @VLFThreshold OR CurrentSizeMB > TargetMB * 1.5 OR LogToDataRatio > 0.5
-                THEN 'DBCC SHRINKFILE (N''' + LogicalName + ''', 0, TRUNCATEONLY);'
-                ELSE ''
-            END,
-            SQL_ModifyFile = 'ALTER DATABASE [' + DatabaseName + '] MODIFY FILE (NAME = N''' + LogicalName + ''', SIZE = ' + CAST(TargetMB AS VARCHAR) + 'MB, FILEGROWTH = ' + 
+            LogToDataRatio = CASE WHEN DataFileSizeMB > 0 THEN CurrentSizeMB / DataFileSizeMB ELSE 0 END,
+            TargetMB = (
+                SELECT CEILING(MAX(Val))
+                FROM (VALUES
+                    (COALESCE(PeakUsedLogMB * @BufferMultiplier, 0)),
+                    (COALESCE(CurrentUsedMB * 2, 0)),
+                    (COALESCE(LargeTransactionMB, 0)),
+                    (COALESCE(@MinLogSizeMB, 0))
+                ) AS AllValues(Val)
+            ),
+            VLFWarning = 
+                CASE WHEN LogFileCount > 1 THEN '!!! CẢNH BÁO: Database có ' + CAST(LogFileCount AS VARCHAR) + ' file log. Nên giảm xuống 1 file.' + CHAR(13)+CHAR(10) ELSE '' END +
+                CASE WHEN VLFCount > @VLFThreshold THEN '!!! CẢNH BÁO: Số VLF hiện tại (' + CAST(VLFCount AS VARCHAR) + ') quá cao. Cần shrink/resize.' + CHAR(13)+CHAR(10) ELSE '' END +
+                CASE WHEN VLFCount < 50 AND VLFCount > 0 THEN '!!! CẢNH BÁO: Số VLF hiện tại (' + CAST(VLFCount AS VARCHAR) + ') quá thấp. Cân nhắc tăng size.' + CHAR(13)+CHAR(10) ELSE '' END +
+                CASE WHEN LogToDataRatio > 0.5 THEN '!!! CẢNH BÁO: Tỷ lệ log/data (' + FORMAT(LogToDataRatio, 'P1') + ') > 50%.' + CHAR(13)+CHAR(10) ELSE '' END,
+            SQL_BackupLog = CASE 
+                WHEN RecoveryModel IN ('FULL', 'BULK_LOGGED') AND LogReuseWait NOT IN ('NOTHING', 'CHECKPOINT') 
+                THEN 'BACKUP LOG [' + DatabaseName + '] TO DISK = ' + QUOTENAME(@BackupPath, '''') + ';' 
+                ELSE '' END,
+            SQL_ShrinkFile = CASE 
+                WHEN VLFCount > @VLFThreshold OR CurrentSizeMB > (TargetMB * 1.5) OR LogToDataRatio > 0.5 
+                THEN 'DBCC SHRINKFILE (N''' + LogicalName + ''', 0, TRUNCATEONLY);' 
+                ELSE '' END,
+            SQL_ModifyFile = 'ALTER DATABASE [' + DatabaseName + '] MODIFY FILE (NAME = N''' + LogicalName + ''', SIZE = ' + 
+                CAST(TargetMB AS VARCHAR) + 'MB, FILEGROWTH = ' +
                 CASE WHEN TargetMB >= 16384 THEN '1024MB' WHEN TargetMB >= 4096 THEN '512MB' ELSE '256MB' END + ');';
 
-        -- Điều chỉnh VLF
+        -- Điều chỉnh TargetMB để đảm bảo tối thiểu 50 VLF
         UPDATE @LogFiles
         SET
             TargetMB = CEILING(50 * 64.0),
             VLFWarning = VLFWarning + 'Adjusted TargetMB to ' + CAST(CEILING(50 * 64.0) AS VARCHAR) + ' MB to ensure at least 50 VLF.'
         WHERE TargetMB < @MinLogSizeMB AND VLFCount < 50;
 
-        -- In kết quả phân tích
+        -- BƯỚC 6: In kết quả phân tích
         IF @Verbose = 1
         BEGIN
             DECLARE @FileInfo NVARCHAR(MAX) = '';
@@ -641,7 +653,7 @@ BEGIN
                 'Peak Used Log (MB): ' + ISNULL(CAST(PeakUsedLogMB AS VARCHAR(30)), 'N/A') + CHAR(13) + CHAR(10) +
                 'Large Transaction (MB): ' + CAST(LargeTransactionMB AS VARCHAR(30)) + CHAR(13) + CHAR(10) +
                 'Data File Size (MB): ' + CAST(DataFileSizeMB AS VARCHAR(30)) + CHAR(13) + CHAR(10) +
-                'Log/Data Ratio: ' + CAST(LogToDataRatio AS VARCHAR(30)) + CHAR(13) + CHAR(10) +
+                'Log/Data Ratio: ' + FORMAT(LogToDataRatio, 'P1') + CHAR(13) + CHAR(10) +
                 'Log File Count: ' + CAST(LogFileCount AS VARCHAR(30)) + CHAR(13) + CHAR(10) +
                 'VLF Count: ' + CAST(VLFCount AS VARCHAR(30)) + CHAR(13) + CHAR(10) +
                 'Disk Free (MB): ' + CAST(DiskFreeMB AS VARCHAR(30)) + CHAR(13) + CHAR(10) +
@@ -649,30 +661,28 @@ BEGIN
                 ISNULL(VLFWarning + CHAR(13) + CHAR(10), '') +
                 CHAR(13) + CHAR(10)
             FROM @LogFiles;
-
             PRINT '================================================================================';
             PRINT ' PHÂN TÍCH VÀ TỐI ƯU TRANSACTION LOG';
             PRINT '================================================================================';
             PRINT @FileInfo;
         END
 
+        -- BƯỚC 7: In các hành động đề xuất
         PRINT '--- HÀNH ĐỘNG ĐỀ XUẤT ---';
         IF EXISTS (SELECT 1 FROM @LogFiles WHERE SQL_BackupLog <> '')
         BEGIN
             PRINT '-- Bước 1: Sao lưu log để giải phóng không gian (chạy trên primary replica nếu cần).';
             SELECT DISTINCT SQL_BackupLog FROM @LogFiles WHERE SQL_BackupLog <> '';
         END
-
         IF EXISTS (SELECT 1 FROM @LogFiles WHERE SQL_ShrinkFile <> '')
         BEGIN
             PRINT '-- Bước 2: Shrink log để giải phóng không gian không sử dụng.';
             SELECT SQL_ShrinkFile FROM @LogFiles WHERE SQL_ShrinkFile <> '';
         END
-
         PRINT '-- Bước 3: Đặt lại kích thước và mức tăng trưởng cho các file log.';
         SELECT SQL_ModifyFile FROM @LogFiles;
 
-        -- Thực thi nếu DryRun = 0
+        -- BƯỚC 8: Thực thi nếu DryRun = 0
         IF @DryRun = 0
         BEGIN
             DECLARE @SQL NVARCHAR(MAX), @DBNameExec SYSNAME, @Action NVARCHAR(100);
@@ -698,31 +708,32 @@ BEGIN
                 END TRY
                 BEGIN CATCH
                     INSERT INTO dbo.LogOptimizationAudit (BatchNumber, DatabaseName, Action, SQLCommand, Status, ExecutionTime, ErrorMessage)
-                    VALUES (0, @DBNameExec, @Action, @SQL, 'Failed', GETDATE(), ERROR_MESSAGE());
+                    VALUES (0, @DBNameExec, @Action, @SQL, 'Failed', GETDATE(), 
+                           'Error: ' + ERROR_MESSAGE() + ' (Line: ' + CAST(ERROR_LINE() AS VARCHAR) + ')');
                 END CATCH
                 FETCH NEXT FROM script_cursor INTO @DBNameExec, @Action, @SQL;
             END
             CLOSE script_cursor;
             DEALLOCATE script_cursor;
         END
-
-        -- Xóa bảng tạm
-        DROP TABLE #LogSpace;
-        DROP TABLE #VLF;
     END TRY
     BEGIN CATCH
         INSERT INTO dbo.LogOptimizationAudit (BatchNumber, DatabaseName, Action, Status, ExecutionTime, ErrorMessage)
-        VALUES (0, 'N/A', 'OptimizeTransactionLog', 'Failed', GETDATE(), ERROR_MESSAGE());
-        DROP TABLE #LogSpace;
-        DROP TABLE #VLF;
+        VALUES (0, 'N/A', 'OptimizeTransactionLog', 'Failed', GETDATE(), 
+               'Error: ' + ERROR_MESSAGE() + ' (Line: ' + CAST(ERROR_LINE() AS VARCHAR) + ')');
     END CATCH
+
+    -- BƯỚC 9: Dọn dẹp bảng tạm
+    IF OBJECT_ID('tempdb..#LogSpace') IS NOT NULL DROP TABLE #LogSpace;
+    IF OBJECT_ID('tempdb..#VLF_Temp') IS NOT NULL DROP TABLE #VLF_Temp;
 END
 GO
 
--- Stored procedure để xử lý batch
+
 IF OBJECT_ID('dbo.usp_ProcessLogOptimizationInBatches', 'P') IS NOT NULL
     DROP PROCEDURE dbo.usp_ProcessLogOptimizationInBatches;
 GO
+
 CREATE PROCEDURE dbo.usp_ProcessLogOptimizationInBatches
     @BatchSize INT = 20, -- Số DB mỗi batch
     @BackupPath NVARCHAR(500) = N'NUL', -- Đường dẫn backup
@@ -740,23 +751,47 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Tạo bảng tạm #LogSpace cho lọc DB
+    -- Bảng tạm cho DBCC SQLPERF
     CREATE TABLE #LogSpace (
-        DBName SYSNAME,
+        DBName SYSNAME PRIMARY KEY,
         LogSizeMB DECIMAL(18,2),
         LogUsedPct DECIMAL(5,2),
         Status INT
     );
 
     BEGIN TRY
-        -- Chèn dữ liệu vào #LogSpace
-        INSERT INTO #LogSpace
-        EXEC('DBCC SQLPERF(LOGSPACE)');
+        -- BƯỚC 1: Kiểm tra điều kiện đầu vào
+        IF @BatchSize <= 0
+        BEGIN
+            RAISERROR ('@BatchSize phải lớn hơn 0.', 16, 1);
+            RETURN;
+        END
+        IF @BackupPath <> N'NUL'
+        BEGIN
+            DECLARE @PathExists BIT;
+            DECLARE @CheckPath TABLE (FileExists BIT, DirectoryExists BIT, ParentDirectoryExists BIT);
+            INSERT INTO @CheckPath EXEC master.dbo.xp_fileexist @BackupPath;
+            SELECT @PathExists = FileExists FROM @CheckPath;
+            IF @PathExists = 0
+            BEGIN
+                RAISERROR ('Đường dẫn backup %s không tồn tại.', 16, 1, @BackupPath);
+                RETURN;
+            END
+        END
+        IF (@MailProfile IS NOT NULL OR @MailRecipients IS NOT NULL) AND NOT EXISTS (SELECT 1 FROM msdb.dbo.sysmail_profile WHERE name = @MailProfile)
+        BEGIN
+            RAISERROR ('Mail profile %s không tồn tại.', 16, 1, @MailProfile);
+            RETURN;
+        END
 
-        -- Xóa bảng trạng thái cũ
+        -- BƯỚC 2: Thu thập thông tin Log Space
+        INSERT INTO #LogSpace
+        EXEC('DBCC SQLPERF(LOGSPACE) WITH NO_INFOMSGS');
+
+        -- BƯỚC 3: Xóa bảng trạng thái cũ
         TRUNCATE TABLE dbo.DatabaseBatchProcessing;
 
-        -- Tạo danh sách cơ sở dữ liệu và gán batch
+        -- BƯỚC 4: Tạo danh sách cơ sở dữ liệu và gán batch
         INSERT INTO dbo.DatabaseBatchProcessing (DatabaseName, BatchNumber)
         SELECT
             d.name,
@@ -782,14 +817,17 @@ BEGIN
         AND d.state_desc = 'ONLINE'
         AND d.log_reuse_wait_desc NOT IN ('NOTHING', 'CHECKPOINT', 'LOG_BACKUP');
 
-        DECLARE @BatchNumber INT, @MaxBatch INT, @DatabaseList NVARCHAR(MAX);
-        SELECT @MaxBatch = LEAST(MAX(BatchNumber), @MaxBatchesPerRun) FROM dbo.DatabaseBatchProcessing;
+        -- BƯỚC 5: Xử lý từng batch
+        DECLARE @BatchNumber INT = 1;
+        DECLARE @MaxBatch INT;
+        SELECT @MaxBatch = CASE 
+            WHEN MAX(BatchNumber) > @MaxBatchesPerRun THEN @MaxBatchesPerRun 
+            ELSE MAX(BatchNumber) 
+        END FROM dbo.DatabaseBatchProcessing;
 
-        -- Lặp qua từng batch
-        SET @BatchNumber = 1;
         WHILE @BatchNumber <= @MaxBatch
         BEGIN
-            -- Lấy danh sách DB trong batch
+            DECLARE @DatabaseList NVARCHAR(MAX);
             SELECT @DatabaseList = STRING_AGG(QUOTENAME(DatabaseName), ',')
             FROM dbo.DatabaseBatchProcessing
             WHERE BatchNumber = @BatchNumber AND Status = 'Pending';
@@ -827,7 +865,7 @@ BEGIN
                 END TRY
                 BEGIN CATCH
                     -- Ghi lỗi và cập nhật trạng thái thành Failed
-                    DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+                    DECLARE @ErrorMessage NVARCHAR(MAX) = 'Error: ' + ERROR_MESSAGE() + ' (Line: ' + CAST(ERROR_LINE() AS VARCHAR) + ')';
                     UPDATE dbo.DatabaseBatchProcessing
                     SET Status = 'Failed', LastProcessed = GETDATE(), ErrorMessage = @ErrorMessage
                     WHERE BatchNumber = @BatchNumber AND Status = 'Processing';
@@ -839,7 +877,7 @@ BEGIN
                 -- Gửi email thông báo
                 IF @MailProfile IS NOT NULL AND @MailRecipients IS NOT NULL
                 BEGIN
-                    DECLARE @MailBody NVARCHAR(MAX) = 
+                    DECLARE @MailBody NVARCHAR(MAX) =
                         'Batch ' + CAST(@BatchNumber AS VARCHAR) + ' completed.' + CHAR(13) + CHAR(10) +
                         'Databases: ' + @DatabaseList + CHAR(13) + CHAR(10) +
                         'Status: ' + (SELECT TOP 1 Status FROM dbo.DatabaseBatchProcessing WHERE BatchNumber = @BatchNumber) + CHAR(13) + CHAR(10) +
@@ -852,30 +890,38 @@ BEGIN
                 END
 
                 -- Độ trễ giữa các batch
-                WAITFOR DELAY ('00:00:' + RIGHT('0' + CAST(@DelaySeconds AS VARCHAR), 2));
+                IF @DelaySeconds > 0
+                BEGIN
+                    DECLARE @DelayTime NVARCHAR(8) = '00:00:' + RIGHT('0' + CAST(@DelaySeconds AS VARCHAR(2)), 2);
+                    WAITFOR DELAY @DelayTime;
+                END
             END
-
             SET @BatchNumber = @BatchNumber + 1;
         END
 
-        -- In báo cáo trạng thái
-        PRINT '================================================================================';
-        PRINT ' BÁO CÁO XỬ LÝ BATCH';
-        PRINT '================================================================================';
-        SELECT
-            BatchNumber,
-            COUNT(*) AS TotalDatabases,
-            SUM(CASE WHEN Status = 'Completed' THEN 1 ELSE 0 END) AS Completed,
-            SUM(CASE WHEN Status = 'Failed' THEN 1 ELSE 0 END) AS Failed,
-            STRING_AGG(CASE WHEN Status = 'Failed' THEN DatabaseName + ': ' + ErrorMessage ELSE NULL END, CHAR(13) + CHAR(10)) AS ErrorDetails
-        FROM dbo.DatabaseBatchProcessing
-        GROUP BY BatchNumber
-        ORDER BY BatchNumber;
+        -- BƯỚC 6: In báo cáo trạng thái
+        BEGIN
+            IF @Verbose = 1
+            BEGIN
+                PRINT '================================================================================';
+                PRINT ' BÁO CÁO XỬ LÝ BATCH';
+                PRINT '================================================================================';
+                SELECT
+                    BatchNumber,
+                    COUNT(*) AS TotalDatabases,
+                    SUM(CASE WHEN Status = 'Completed' THEN 1 ELSE 0 END) AS Completed,
+                    SUM(CASE WHEN Status = 'Failed' THEN 1 ELSE 0 END) AS Failed,
+                    STRING_AGG(CASE WHEN Status = 'Failed' THEN DatabaseName + ': ' + ErrorMessage ELSE NULL END, CHAR(13) + CHAR(10)) AS ErrorDetails
+                FROM dbo.DatabaseBatchProcessing
+                GROUP BY BatchNumber
+                ORDER BY BatchNumber;
+            END
+        END
 
-        -- Gửi email báo cáo cuối cùng
+        -- BƯỚC 7: Gửi email báo cáo cuối cùng
         IF @MailProfile IS NOT NULL AND @MailRecipients IS NOT NULL
         BEGIN
-            DECLARE @FinalReport NVARCHAR(MAX) = 
+            DECLARE @FinalReport NVARCHAR(MAX) =
                 'Log Optimization Completed.' + CHAR(13) + CHAR(10) +
                 'Total Batches: ' + CAST(@MaxBatch AS VARCHAR) + CHAR(13) + CHAR(10) +
                 'Total Databases: ' + CAST((SELECT COUNT(*) FROM dbo.DatabaseBatchProcessing) AS VARCHAR) + CHAR(13) + CHAR(10) +
@@ -888,16 +934,17 @@ BEGIN
                 @subject = 'Log Optimization Final Report',
                 @body = @FinalReport;
         END
-
-        -- Xóa bảng tạm
-        DROP TABLE #LogSpace;
     END TRY
     BEGIN CATCH
+        -- Ghi lỗi vào bảng audit
+        DECLARE @GlobalError NVARCHAR(MAX) = 'Error: ' + ERROR_MESSAGE() + ' (Line: ' + CAST(ERROR_LINE() AS VARCHAR) + ')';
         INSERT INTO dbo.LogOptimizationAudit (BatchNumber, DatabaseName, Action, Status, ExecutionTime, ErrorMessage)
-        VALUES (0, 'N/A', 'ProcessLogOptimizationInBatches', 'Failed', GETDATE(), ERROR_MESSAGE());
-        PRINT '=== LỖI: ' + ERROR_MESSAGE();
-        DROP TABLE #LogSpace;
+        VALUES (0, 'N/A', 'ProcessLogOptimizationInBatches', 'Failed', GETDATE(), @GlobalError);
     END CATCH
+
+    -- BƯỚC 8: Dọn dẹp bảng tạm
+    IF OBJECT_ID('tempdb..#LogSpace') IS NOT NULL
+        DROP TABLE #LogSpace;
 END
 GO
 
@@ -995,7 +1042,7 @@ GROUP BY database_id, file_id;
 
     ```bash
     USE DBA_Tools;
-    SELECT COUNT(*) AS FailedCount FROM dbo.LogOptimizationAudit WHERE Status = 'Failed' AND ExecutionTime > DATEADD(HOUR, -24, GETDATE());
+    SELECT COUNT(*) AS FailedCount FROM dbo.  WHERE Status = 'Failed' AND ExecutionTime > DATEADD(HOUR, -24, GETDATE());
     ```
 
     - Xuất sang CSV hoặc API bằng SSIS nếu cần.
