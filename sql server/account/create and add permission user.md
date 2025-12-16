@@ -1,19 +1,19 @@
 # Bước 1: Tạo login (nếu chưa có):
-```bash
+```sql
 CREATE LOGIN [sqluser2] WITH PASSWORD = 'YourStrongPassword123!';
 ```
 # Bước 2: Tạo user trong database:
-```bash
+```sql
 USE [YourDatabaseName];
 CREATE USER [sqluser2] FOR LOGIN [sqluser2];
 ```
 
 # Bước 3: Thêm vào role db_owner:
-```bash
+```sql
 ALTER ROLE db_owner ADD MEMBER [sqluser2];
 ```
 # Phân quyền owner cho tất cả các db trong instance:
-```bash
+```sql
 DECLARE @db NVARCHAR(128);
 DECLARE @sql NVARCHAR(MAX);
 
@@ -57,25 +57,31 @@ DEALLOCATE db_cursor;
 ```
 
 # Phân quyền chỉ đọc:
-```bash
+```sql
 USE YourDatabase;
 GO
 GRANT SELECT ON dbo.MyView TO app_user;
 ```
 
 # Phân quyền read and crud:
-```bash
+```sql
 USE YourDatabase;
 GO
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.MyTable TO app_user;
 ```
 
 # Phân quyền cho 1 schema:
-```bash
+```sql
 GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::dbo TO app_user;
 ```
 
 # Thu hồi quyền:
-```bash
+```sql
 REVOKE SELECT, INSERT, UPDATE, DELETE ON dbo.MyTable FROM app_user;
+```
+
+## Quyền cho phép người dùng thực hiện những thao tác thay đổi cấu trúc của đối tượng
+
+```sql
+GRANT ALTER ON OBJECT::dbo.MyTable TO UserA;
 ```

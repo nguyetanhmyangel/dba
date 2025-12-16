@@ -129,154 +129,203 @@ Hành động này không giải quyết gốc rễ vấn đề nhưng sẽ giú
 
 #### Script shrink log, tối ưu VLF:
 
+- Kiểm tra xem file log thuộc database nào:
+
 ```sql
+DECLARE @PhysicalPath NVARCHAR(512) = N'F:\Log\EDMS_TKNIPI'; -- <--- INPUT
 
-/******************************************************************
-   TỐI ƯU LOG – SMART LOOP + FALLBACK 
-   Đã sửa lỗi định nghĩa bảng VLF.
-   LƯU Ý: Phần Fallback SIMPLE mode sẽ báo lỗi nếu DB đang trong AG.
-          (Script đã thêm Try-Catch để bỏ qua nếu không chuyển được).
-******************************************************************/
-
-SET NOCOUNT ON;
-
--- =============================================================
--- INPUT: ĐƯỜNG DẪN FILE
--- =============================================================
-DECLARE @PhysicalPath NVARCHAR(512) = N'F:\Log\VSPXLApp_1'; -- <--- INPUT
-
-DECLARE @DBName      sysname;
-DECLARE @LogFileName sysname;
-DECLARE @DataSizeMB  BIGINT;
-DECLARE @TargetSizeMB BIGINT;
-DECLARE @GrowthMB    INT;
 
 -- 1. TÌM DB TỪ FILE PATH
 SELECT TOP 1 
-    @DBName      = DB_NAME(database_id),
-    @LogFileName = name
+     DB_NAME(database_id) as DbName,
+    name  as LogFileName 
 FROM sys.master_files
 WHERE type_desc = 'LOG' 
   AND physical_name LIKE '%' + RIGHT(@PhysicalPath, CHARINDEX('\', REVERSE(@PhysicalPath))-1) + '%';
+```
 
-IF @DBName IS NULL
-BEGIN 
-    RAISERROR(N'DB NOT FOUND FOR FILE: %s', 16, 1, @PhysicalPath); 
-    RETURN; 
+-- Kiểm tra log của db và xử lí
+
+```sql
+
+
+
+/* =================================================================================
+   SQL SERVER LOG MANAGER (REPORT & EXECUTE MODE)
+   Tính năng:
+     1. Mode 'REPORT': Xem tình trạng VLF, Size, Dự đoán Target (An toàn)
+     2. Mode 'EXECUTE': Chạy quy trình Backup Append -> Shrink Loop -> Resize
+   ================================================================================= */
+SET NOCOUNT ON;
+
+-- =============================================================
+-- [1] CẤU HÌNH (USER INPUT)
+-- =============================================================
+DECLARE @DBName      sysname       = N'EDMS_TKNIPI';   -- <--- TÊN DATABASE
+DECLARE @BackupPath  nvarchar(256) = N'F:\Log\'; -- <--- FOLDER BACKUP
+DECLARE @Mode        varchar(10)   = 'REPORT';             -- <--- CHỌN: 'REPORT' hoặc 'EXECUTE'
+
+-- =============================================================
+-- [2] KHAI BÁO BIẾN & TÍNH TOÁN
+-- =============================================================
+DECLARE @LogFile sysname, @LogSizeMB int, @LogUsedPct decimal(5,2);
+DECLARE @DataMB bigint, @TargetSizeMB int, @GrowthMB int;
+DECLARE @VLFCount int, @AvgVLFSize decimal(10,2);
+DECLARE @IsPrimary bit = 1, @HadrStatus varchar(50) = 'STANDALONE';
+DECLARE @Msg nvarchar(max);
+
+-- 2.1 Kiểm tra DB tồn tại
+IF DB_ID(@DBName) IS NULL BEGIN RAISERROR(N'Database [%s] not exist.',16,1,@DBName); RETURN; END
+
+-- 2.2 Lấy thông tin File Log
+SELECT TOP 1 @LogFile = name, @LogSizeMB = (size*8)/1024 
+FROM sys.master_files WHERE database_id = DB_ID(@DBName) AND type = 1;
+
+-- 2.3 Kiểm tra AG Role (Dùng function chuẩn 2019)
+IF SERVERPROPERTY('IsHadrEnabled') = 1 
+BEGIN
+    SET @IsPrimary = sys.fn_hadr_is_primary_replica(@DBName);
+    IF @IsPrimary = 0 SET @HadrStatus = 'SECONDARY (READ-ONLY)';
+    ELSE IF @IsPrimary = 1 SET @HadrStatus = 'PRIMARY';
+    ELSE SET @HadrStatus = 'NOT_JOINED';
 END
 
--- 2. TÍNH TOÁN TARGET SIZE
-SELECT @DataSizeMB = SUM(CAST(size AS BIGINT)) * 8 / 1024 
-FROM sys.master_files 
-WHERE database_id = DB_ID(@DBName) AND type = 0;
+-- 2.4 Tính toán Target Size (Kimberly Tripp Logic)
+SELECT @DataMB = SUM(CAST(size AS bigint)*8/1024) 
+FROM sys.master_files WHERE database_id = DB_ID(@DBName) AND type = 0;
 
-SELECT 
-    @TargetSizeMB = CASE 
-        WHEN @DataSizeMB <= 10000  THEN 4096 
-        WHEN @DataSizeMB <= 50000  THEN 8192 
-        WHEN @DataSizeMB <= 200000 THEN 16384 
-        ELSE 32768 END,
-    @GrowthMB = CASE 
-        WHEN @DataSizeMB <= 200000 THEN 1024 
-        ELSE 2048 END;
+SET @TargetSizeMB = CASE 
+    WHEN @DataMB <= 10000   THEN 2048   -- Data < 10GB  -> Log 2GB
+    WHEN @DataMB <= 50000   THEN 4096   -- Data < 50GB  -> Log 4GB
+    WHEN @DataMB <= 200000  THEN 8192   -- Data < 200GB -> Log 8GB
+    ELSE 16384 END;                     -- Data to      -> Log 16GB
 
-PRINT N'=== DB PROCESSING: [' + @DBName + N'] | Data ' + FORMAT(@DataSizeMB,'N0') + N'MB ===';
+SET @GrowthMB = CASE WHEN @DataMB <= 200000 THEN 2048 ELSE 8192 END;
 
--- 3. XÂY DỰNG SCRIPT ĐỘNG
-DECLARE @SQL NVARCHAR(MAX) = N'
-USE ' + QUOTENAME(@DBName) + N';
+-- 2.5 Lấy thông tin VLF (SQL 2019 Native)
+-- Lưu ý: Phải dùng Dynamic SQL để chuyển context sang DB đích mới lấy được dm_db_log_info chính xác
+DECLARE @VLF_SQL nvarchar(max) = N'SELECT @Cnt = COUNT(*), @Avg = AVG(vlf_size_mb) FROM ' + QUOTENAME(@DBName) + N'.sys.dm_db_log_info(DB_ID('''+@DBName+N'''))';
+EXEC sp_executesql @VLF_SQL, N'@Cnt int OUTPUT, @Avg decimal(10,2) OUTPUT', @Cnt=@VLFCount OUTPUT, @Avg=@AvgVLFSize OUTPUT;
 
--- Check AG Role
-IF EXISTS (SELECT 1 FROM sys.dm_hadr_availability_replica_states WHERE is_local = 1 AND role_desc = ''SECONDARY'')
-    RAISERROR(''LỖI: DB đang là SECONDARY Replica!'',16,1);
-
-PRINT ''B1: Smart Shrink Loop (Max 6 attempts)...'';
-DECLARE @Attempt INT = 0;
-DECLARE @CurrMB INT;
-
-WHILE @Attempt < 6
+-- =============================================================
+-- [3] CHẾ ĐỘ BÁO CÁO (REPORT MODE)
+-- =============================================================
+IF @Mode = 'REPORT'
 BEGIN
-    SET @Attempt += 1;
-    SELECT @CurrMB = size*8/1024 FROM sys.database_files WHERE name = ''' + @LogFileName + N''';
+    PRINT '================================================================';
+    PRINT '                   LOG HEALTH REPORT                            ';
+    PRINT '================================================================';
+    PRINT 'Database:       ' + @DBName;
+    PRINT 'AG Role:        ' + @HadrStatus;
+    PRINT 'Data Size:      ' + FORMAT(@DataMB, 'N0') + ' MB';
+    PRINT '----------------------------------------------------------------';
+    PRINT 'CURRENT STATUS:';
+    PRINT '   Log File:    ' + @LogFile;
+    PRINT '   Size:        ' + FORMAT(@LogSizeMB, 'N0') + ' MB';
     
-    IF @CurrMB <= 1200
-    BEGIN 
-        PRINT ''--> SHRINK SUCCESSFULLY after '' + CAST(@Attempt AS VARCHAR) + '' times! Size = '' + CAST(@CurrMB AS VARCHAR) + '' MB''; 
-        BREAK; 
+    -- Đánh giá VLF
+    DECLARE @VLFStatus varchar(50);
+    IF @VLFCount > 10000 SET @VLFStatus = '(CRITICAL - Startup slow)'
+    ELSE IF @VLFCount > 1000 AND @AvgVLFSize < 64 SET @VLFStatus = '(WARNING - Fragmented)'
+    ELSE IF @VLFCount > 1000 SET @VLFStatus = '(OK - Large DB)'
+    ELSE SET @VLFStatus = '(EXCELLENT)';
+
+    PRINT '   VLF Count:   ' + CAST(@VLFCount AS varchar) + '   ' + @VLFStatus;
+    PRINT '   Avg VLF:     ' + FORMAT(@AvgVLFSize, 'N2') + ' MB';
+    PRINT '----------------------------------------------------------------';
+    PRINT 'TARGET CALCULATION (Based on Data Size):';
+    PRINT '   Target Size:    ' + FORMAT(@TargetSizeMB, 'N0') + ' MB';
+    PRINT '   Growth Rate:    ' + FORMAT(@GrowthMB, 'N0') + ' MB';
+    PRINT '----------------------------------------------------------------';
+    
+    PRINT 'FINAL RECOMMENDATION:';
+    
+    -- Logic 1: Không chạy được do là Secondary
+    IF @IsPrimary = 0 
+        PRINT '   [STOP] CANNOT BE EXECUTED (This is a Secondary Replica).';
+    
+    -- Logic 2: VLF quá xấu -> BẮT BUỘC CHẠY
+    ELSE IF @VLFCount > 1000 AND @AvgVLFSize < 64
+        PRINT '   [URGENT] RUN IT IMMEDIATELY. The log file is heavily fragmented (High VLF)..';
+
+    -- Logic 3: VLF tốt, nhưng Size quá lớn (gấp 1.5 lần target) -> TÙY CHỌN
+    ELSE IF @LogSizeMB > (@TargetSizeMB * 1.5)
+    BEGIN
+        PRINT '   [OPTIONAL] CAN BE RUNNING TO SAVE SPACE.';
+        PRINT '   Reason: The current log (' + CAST(@LogSizeMB AS varchar) + 'MB) is much larger than the estimated requirement. (' + CAST(@TargetSizeMB AS varchar) + 'MB).';
+        PRINT '   Note: Only run this if you are certain the database will not require such large log volumes frequently.';
     END
-    
-    PRINT ''--> Time '' + CAST(@Attempt AS VARCHAR) + '': Backup Log + Checkpoint + Shrink... (Current '' + CAST(@CurrMB AS VARCHAR) + '' MB)'';
-    
-    BACKUP LOG ' + QUOTENAME(@DBName) + N' TO DISK = ''NUL:'';
-    CHECKPOINT;
-    DBCC SHRINKFILE (N''' + @LogFileName + N''', 1024) WITH NO_INFOMSGS;
-    
-    -- Mẹo vàng: Thay đổi Recovery Time để force log flush
-    IF @Attempt = 3 ALTER DATABASE ' + QUOTENAME(@DBName) + N' SET TARGET_RECOVERY_TIME = 60 SECONDS;
-    IF @Attempt = 4 ALTER DATABASE ' + QUOTENAME(@DBName) + N' SET TARGET_RECOVERY_TIME = 0 SECONDS;
-    
-    WAITFOR DELAY ''00:00:02'';
+
+    -- Logic 4: Mọi thứ đều ổn
+    ELSE
+        PRINT '   [OK] HEALTHY. No action is required.';
+        
+    PRINT '================================================================';
 END
 
--- FALLBACK SIÊU CỨNG (Lưu ý: Không chạy được nếu DB đang trong AG active)
-SELECT @CurrMB = size*8/1024 FROM sys.database_files WHERE name = ''' + @LogFileName + N''';
-
-IF @CurrMB > 1500
+-- =============================================================
+-- [4] CHẾ ĐỘ THỰC THI (EXECUTE MODE)
+-- =============================================================
+ELSE IF @Mode = 'EXECUTE'
 BEGIN
-    PRINT ''WARNING: Not down yet. Try switching to SIMPLE Mode (Try-Catch)...'';
-    BEGIN TRY
-        ALTER DATABASE ' + QUOTENAME(@DBName) + N' SET RECOVERY SIMPLE WITH NO_WAIT;
+    -- Safety Check
+    IF @IsPrimary = 0 
+    BEGIN 
+        RAISERROR(N'STOP: The database is currently a Secondary Replica. Please switch to Primary Replica..', 16, 1); 
+        RETURN; 
+    END
+
+    DECLARE @BackupFile nvarchar(512) = @BackupPath + N'LOG_' + @DBName + N'_' + FORMAT(GETDATE(), 'yyyyMMdd_HHmmss') + N'.trn';
+    
+    DECLARE @ExecSQL nvarchar(max) = N'
+    USE ' + QUOTENAME(@DBName) + N';
+    SET NOCOUNT ON;
+    
+    PRINT ''>>> STARTING EXECUTION FOR: ' + @DBName + N''';
+    PRINT ''    Target: ' + CAST(@TargetSizeMB AS varchar) + N' MB | Backup: ' + @BackupFile + N''';
+
+    -- VÒNG LẶP THỬ SHRINK (5 LẦN)
+    DECLARE @i int = 0, @curr int;
+    WHILE @i < 5
+    BEGIN
+        SET @i += 1;
+        SELECT @curr = size*8/1024 FROM sys.database_files WHERE name = ''' + @LogFile + N''';
+        
+        IF @curr <= 1200 
+        BEGIN
+            PRINT ''    [Loop '' + CAST(@i AS varchar) + ''] Size OK ('' + CAST(@curr AS varchar) + '' MB). Breaking loop.'';
+            BREAK;
+        END
+
+        PRINT ''    [Loop '' + CAST(@i AS varchar) + ''] Current: '' + CAST(@curr AS varchar) + '' MB. Backup Append & Shrink...'';
+        
+        BACKUP LOG ' + QUOTENAME(@DBName) + N' TO DISK = ''' + @BackupFile + N''' WITH COMPRESSION, NOINIT;
         CHECKPOINT;
-        DBCC SHRINKFILE (N''' + @LogFileName + N''', 512) WITH NO_INFOMSGS;
-        ALTER DATABASE ' + QUOTENAME(@DBName) + N' SET RECOVERY FULL WITH NO_WAIT;
-        BACKUP DATABASE ' + QUOTENAME(@DBName) + N' TO DISK = ''NUL:'' WITH COPY_ONLY; -- Reset log chain
-        PRINT ''--> Fallback SIMPLE thành công!'';
-    END TRY
-    BEGIN CATCH
-        PRINT ''--> Unable to transfer SIMPLE (Probably in AG). Skip this step.'';
-    END CATCH
+        DBCC SHRINKFILE(N''' + @LogFile + N''', 1024) WITH NO_INFOMSGS;
+        WAITFOR DELAY ''00:00:01'';
+    END
+
+    -- RESIZE & REGROW
+    PRINT ''>>> Resizing & Setting Growth...'';
+    ALTER DATABASE ' + QUOTENAME(@DBName) + N' MODIFY FILE (NAME = N''' + @LogFile + N''', FILEGROWTH = ' + CAST(@GrowthMB AS varchar) + N'MB);
+    ALTER DATABASE ' + QUOTENAME(@DBName) + N' MODIFY FILE (NAME = N''' + @LogFile + N''', SIZE = ' + CAST(@TargetSizeMB AS varchar) + N'MB);
+
+    PRINT ''>>> DONE. Status After:'';
+    ';
+
+    -- Thực thi lệnh Shrink
+    EXEC sp_executesql @ExecSQL;
+
+    -- In báo cáo sau khi chạy xong
+    SELECT @VLF_SQL = N'SELECT @Cnt = COUNT(*) FROM ' + QUOTENAME(@DBName) + N'.sys.dm_db_log_info(DB_ID('''+@DBName+N'''))';
+    DECLARE @NewVLF int;
+    EXEC sp_executesql @VLF_SQL, N'@Cnt int OUTPUT', @Cnt=@NewVLF OUTPUT;
+    
+    PRINT '    Old VLF: ' + CAST(@VLFCount AS varchar) + ' -> New VLF: ' + CAST(@NewVLF AS varchar);
+    PRINT '    PLEASE RUN FULL BACKUP NOW!';
 END
-
--- Set Growth + Grow 1 lần
-PRINT ''B2: Setting Growth & Resize...'';
-ALTER DATABASE ' + QUOTENAME(@DBName) + N' MODIFY FILE (NAME = N''' + @LogFileName + N''', FILEGROWTH = ' + CAST(@GrowthMB AS VARCHAR) + N'MB);
-
-DECLARE @FinalCheck INT = (SELECT size*8/1024 FROM sys.database_files WHERE name = ''' + @LogFileName + N''');
-IF @FinalCheck < ' + CAST(@TargetSizeMB AS VARCHAR) + N'
+ELSE
 BEGIN
-    ALTER DATABASE ' + QUOTENAME(@DBName) + N' MODIFY FILE (NAME = N''' + @LogFileName + N''', SIZE = ' + CAST(@TargetSizeMB AS VARCHAR) + N'MB);
+    PRINT 'Invalid mode. Please select ''REPORT'' or ''EXECUTE''.';
 END
-
--- KẾT QUẢ VLF (ĐÃ FIX LỖI MSG 213 TẠI ĐÂY)
-PRINT ''B3: Check VLF (SQL 2014 Compatible):'';
-
--- Khai báo bảng đủ cột cho SQL 2014
-DECLARE @vlf TABLE (
-    RecoveryUnitId INT, 
-    FileId INT, 
-    FileSize BIGINT, 
-    StartOffset BIGINT, 
-    FSeqNo BIGINT, 
-    Status TINYINT, 
-    Parity TINYINT, 
-    CreateLSN NUMERIC(25,0)
-);
-
--- Escape dấu nháy đơn trong tên DB cho chắc chắn
-INSERT INTO @vlf EXEC(''DBCC LOGINFO([' + REPLACE(@DBName, '''', '''''') + N'])'');
-
-SELECT 
-    COUNT(*) AS Total_VLF, 
-    CAST(AVG(FileSize/1024.0/1024) AS DECIMAL(10,2)) AS Avg_VLF_MB,
-    CASE WHEN COUNT(*) < 100 THEN ''EXCELLENT'' ELSE ''HIGH VLF'' END AS Status
-FROM @vlf;
-';
-
--- 4. CHẠY
-EXEC sp_executesql @SQL;
-
-PRINT N'';
-PRINT N'100% COMPLETE! Long has been processed.';
-PRINT N'Recommended: Run a FULL BACKUP immediately.';
-
 ```
