@@ -38,6 +38,7 @@ EXEC sp_serveroption @server=N'ORACLE_DB_ALIAS', @optname=N'rpc', @optvalue=N'tr
 EXEC sp_serveroption @server=N'ORACLE_DB_ALIAS', @optname=N'rpc out', @optvalue=N'true'
 GO 
 ```
+- Sử dụng lệnh tnsping ERP_PROD trong cmd để kiểm tra lại
 
 ### Select example:
 

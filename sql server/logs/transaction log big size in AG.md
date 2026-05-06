@@ -147,9 +147,6 @@ WHERE type_desc = 'LOG'
 -- Kiểm tra log của db và xử lí
 
 ```sql
-
-
-
 /* =================================================================================
    SQL SERVER LOG MANAGER (REPORT & EXECUTE MODE)
    Tính năng:
