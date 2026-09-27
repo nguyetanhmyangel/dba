@@ -137,6 +137,21 @@ SELECT p.name AS ProfileName, a.name AS AccountName
 FROM msdb.dbo.sysmail_profileaccount pa
 JOIN msdb.dbo.sysmail_profile p ON pa.profile_id = p.profile_id
 JOIN msdb.dbo.sysmail_account a ON pa.account_id = a.account_id;
+
+-- Kiểm tra port
+USE msdb;
+GO
+
+SELECT
+    a.name AS AccountName,
+    a.email_address,
+    a.display_name,
+    s.servername AS SMTPServer,
+    s.port,
+    s.enable_ssl,
+    s.username
+FROM dbo.sysmail_account a
+JOIN dbo.sysmail_server s ON a.account_id = s.account_id;
 ```
 
 ### 5. Delete

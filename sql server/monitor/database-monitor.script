@@ -1,0 +1,3977 @@
+-- This script does not yet include Brent Ozar's First Responder Kit (FRK).
+
+USE [DbaMonitor]
+GO
+/****** Object:  Table [dbo].[AdaptiveLogBackupLog]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[AdaptiveLogBackupLog](
+	[LogID] [bigint] IDENTITY(1,1) NOT NULL,
+	[RunTime] [datetime2](2) NOT NULL,
+	[DatabaseName] [sysname] NOT NULL,
+	[TotalLogMB] [decimal](18, 2) NULL,
+	[UsedLogMB] [decimal](18, 2) NULL,
+	[UsedLogPercent] [decimal](5, 2) NULL,
+	[MinutesSinceLastBackup] [int] NULL,
+	[LogReuseWait] [nvarchar](60) NULL,
+	[MaxSendQueueMB] [bigint] NULL,
+	[MaxRedoQueueMB] [bigint] NULL,
+	[WorstSyncHealth] [nvarchar](60) NULL,
+	[ActionTaken] [varchar](20) NOT NULL,
+	[TriggerReason] [nvarchar](255) NULL,
+	[ErrorMessage] [nvarchar](4000) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[LogID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[AgGuardHistory]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[AgGuardHistory](
+	[LogId] [bigint] IDENTITY(1,1) NOT NULL,
+	[CheckTime] [datetime2](0) NULL,
+	[ActionType] [varchar](20) NULL,
+	[DatabaseName] [sysname] NOT NULL,
+	[Verdict] [varchar](10) NULL,
+	[Reason] [nvarchar](1000) NULL,
+	[DynamicMaxDOP] [int] NULL,
+	[Executed] [bit] NULL,
+	[ExecutionStatus] [nvarchar](50) NULL,
+	[ErrorMessage] [nvarchar](max) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[LogId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[DailyCheckAuditLog]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[DailyCheckAuditLog](
+	[AuditID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CheckDate] [date] NOT NULL,
+	[CheckCategory] [varchar](50) NOT NULL,
+	[SeverityLevel] [varchar](10) NOT NULL,
+	[CheckDetails] [nvarchar](max) NOT NULL,
+ CONSTRAINT [PK_DailyCheckAuditLog] PRIMARY KEY CLUSTERED 
+(
+	[AuditID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[DbaMonitorErrorLog]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[DbaMonitorErrorLog](
+	[ErrorID] [bigint] IDENTITY(1,1) NOT NULL,
+	[ErrorTime] [datetime2](0) NOT NULL,
+	[ProcedureName] [nvarchar](128) NOT NULL,
+	[ErrorStep] [nvarchar](100) NOT NULL,
+	[ErrorMessage] [nvarchar](4000) NOT NULL,
+	[ErrorLine] [int] NOT NULL,
+ CONSTRAINT [PK_DbaMonitorErrorLog] PRIMARY KEY CLUSTERED 
+(
+	[ErrorID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[FileIOStatsSnapshot]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[FileIOStatsSnapshot](
+	[SnapTime] [datetime2](0) NOT NULL,
+	[DatabaseID] [smallint] NOT NULL,
+	[FileID] [smallint] NOT NULL,
+	[DatabaseName] [nvarchar](128) NOT NULL,
+	[LogicalFileName] [nvarchar](128) NOT NULL,
+	[PhysicalName] [nvarchar](260) NOT NULL,
+	[NumOfReads] [bigint] NOT NULL,
+	[IoStallReadMs] [bigint] NOT NULL,
+	[NumOfWrites] [bigint] NOT NULL,
+	[IoStallWriteMs] [bigint] NOT NULL,
+	[SizeOnDiskMB] [decimal](18, 2) NOT NULL,
+ CONSTRAINT [PK_FileIOStatsSnapshot] PRIMARY KEY CLUSTERED 
+(
+	[SnapTime] ASC,
+	[DatabaseID] ASC,
+	[FileID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[LogHealthAlerts]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[LogHealthAlerts](
+	[alert_id] [bigint] IDENTITY(1,1) NOT NULL,
+	[check_time] [datetime] NULL,
+	[status_display] [nvarchar](50) NULL,
+	[warning_level] [varchar](25) NULL,
+	[database_name] [sysname] NOT NULL,
+	[recovery_model] [nvarchar](60) NULL,
+	[log_files] [int] NULL,
+	[io_placement] [nvarchar](50) NULL,
+	[cur_growth] [nvarchar](50) NULL,
+	[rec_growth_mb] [int] NULL,
+	[vlf_count] [int] NULL,
+	[log_size_mb] [int] NULL,
+	[used_pct] [decimal](6, 2) NULL,
+	[reuse_wait] [nvarchar](60) NULL,
+	[disk_status] [nvarchar](256) NULL,
+	[recommendation] [nvarchar](max) NULL,
+	[generated_fix_script] [nvarchar](max) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[alert_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[PerformanceSnapHistory]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PerformanceSnapHistory](
+	[SnapID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SnapTime] [datetime2](0) NOT NULL,
+	[CpuSqlPercent] [tinyint] NOT NULL,
+	[CpuIdlePercent] [tinyint] NOT NULL,
+	[CpuOtherPercent]  AS (((100)-[CpuSqlPercent])-[CpuIdlePercent]),
+	[PageLifeExpectancy] [int] NOT NULL,
+	[MemoryGrantsPending] [int] NOT NULL,
+	[RunnableTasksCount] [int] NOT NULL,
+ CONSTRAINT [PK_PerformanceSnapHistory] PRIMARY KEY CLUSTERED 
+(
+	[SnapID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[SqlServerVersions]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[SqlServerVersions](
+	[MajorVersionNumber] [tinyint] NOT NULL,
+	[MinorVersionNumber] [smallint] NOT NULL,
+	[Branch] [varchar](34) NOT NULL,
+	[Url] [varchar](99) NOT NULL,
+	[ReleaseDate] [date] NOT NULL,
+	[MainstreamSupportEndDate] [date] NOT NULL,
+	[ExtendedSupportEndDate] [date] NOT NULL,
+	[MajorVersionName] [varchar](19) NOT NULL,
+	[MinorVersionName] [varchar](67) NOT NULL,
+ CONSTRAINT [PK_SqlServerVersions] PRIMARY KEY CLUSTERED 
+(
+	[MajorVersionNumber] ASC,
+	[MinorVersionNumber] ASC,
+	[ReleaseDate] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[StorageDatabaseBaseline]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[StorageDatabaseBaseline](
+	[SnapDate] [date] NOT NULL,
+	[DatabaseName] [nvarchar](128) NOT NULL,
+	[DataFileMB] [decimal](18, 2) NOT NULL,
+	[LogFileMB] [decimal](18, 2) NOT NULL,
+	[TotalMB]  AS ([DataFileMB]+[LogFileMB]),
+ CONSTRAINT [PK_StorageDatabaseBaseline] PRIMARY KEY CLUSTERED 
+(
+	[SnapDate] ASC,
+	[DatabaseName] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[StorageVolumeBaseline]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[StorageVolumeBaseline](
+	[SnapDate] [date] NOT NULL,
+	[VolumeMountPoint] [nvarchar](260) NOT NULL,
+	[TotalSpaceGB] [decimal](18, 2) NOT NULL,
+	[AvailableSpaceGB] [decimal](18, 2) NOT NULL,
+	[FreeSpacePercent]  AS (CONVERT([decimal](5,2),([AvailableSpaceGB]/nullif([TotalSpaceGB],(0)))*(100))),
+ CONSTRAINT [PK_StorageVolumeBaseline] PRIMARY KEY CLUSTERED 
+(
+	[SnapDate] ASC,
+	[VolumeMountPoint] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[AdaptiveLogBackupLog] ADD  DEFAULT (sysdatetime()) FOR [RunTime]
+GO
+ALTER TABLE [dbo].[AgGuardHistory] ADD  DEFAULT (sysdatetime()) FOR [CheckTime]
+GO
+ALTER TABLE [dbo].[AgGuardHistory] ADD  DEFAULT ('REORGANIZE') FOR [ActionType]
+GO
+ALTER TABLE [dbo].[AgGuardHistory] ADD  DEFAULT ((0)) FOR [Executed]
+GO
+ALTER TABLE [dbo].[DbaMonitorErrorLog] ADD  CONSTRAINT [DF_DbaMonitorErrorLog_ErrorTime]  DEFAULT (sysdatetime()) FOR [ErrorTime]
+GO
+ALTER TABLE [dbo].[FileIOStatsSnapshot] ADD  CONSTRAINT [DF_FileIOStatsSnapshot_SnapTime]  DEFAULT (sysdatetime()) FOR [SnapTime]
+GO
+ALTER TABLE [dbo].[LogHealthAlerts] ADD  DEFAULT (getdate()) FOR [check_time]
+GO
+ALTER TABLE [dbo].[PerformanceSnapHistory] ADD  CONSTRAINT [DF_PerformanceSnapHistory_SnapTime]  DEFAULT (sysdatetime()) FOR [SnapTime]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_AdaptiveLogBackup]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		nghianl.ts
+-- Create date: 160926
+-- Description:	-- Description:	Bản chất: Là thủ tục sao lưu Transaction Log có khả năng tự điều chỉnh (Adaptive) và tự phối hợp giữa các node Primary – Secondary thông qua Application Lock (sp_getapplock / sp_releaseapplock).
+-- Version: 2019
+-- Ý nghĩa & Mục đích giải quyết:
+	-- Chống xung đột giẫm chân (Exclusive Locking): Dùng ổ khóa tên Global_AdaptiveLogBackup_Lock với phạm vi Session. Khi Node A (ví dụ: Secondary) đang thực hiện backup log, Node B (Primary) nếu chạy cùng lúc sẽ không xin được khóa và tự động rút lui trong an toàn, tránh làm nghẽn I/O đĩa và lock bảng hệ thống.
+	-- Giải phóng khóa chuẩn xác (sp_releaseapplock): Đảm bảo ngay khi tiến trình backup log vừa hoàn tất (hoặc gặp lỗi văng ra), ổ khóa được nhả ngay lập tức để lượt backup 10–15 phút kế tiếp không bị treo.
+	-- Bảo toàn chuỗi LSN (Log Sequence Number): Giữ cho chuỗi file backup log luôn tuần tự và liền mạch, tránh tình trạng hai máy cùng xuất file backup log đan xen nhau gây khó khăn cho việc khôi phục (Disaster Recovery).
+	-- Thích ứng theo tải (Adaptive): Khi kết hợp với các tác vụ bảo trì sinh nhiều log (như Reorganize/Rebuild Index), cơ chế này kích hoạt backup log dày hơn nhằm liên tục tái sử dụng các Virtual Log Files (VLF), giữ cho kích thước file .ldf ổn định.
+-- Rủi ro logic trong Always On AG:
+	--  Khi AG failover từ Node A sang Node B, trên Node B bảng msdb.dbo.backupset chưa có lịch sử backup mà Node A đã thực hiện trước đó (do msdb là database độc lập trên từng instance, không đồng bộ qua AG).
+	--  Điều này khiến last_log_backup trả về NULL, dẫn đến DATEDIFF tính từ '1900-01-01' và procedure sẽ kích hoạt backup ngay lập tức trong lần chạy đầu tiên sau failover.
+-- =============================================
+CREATE PROCEDURE [dbo].[usp_AdaptiveLogBackup]
+    @LogPercentThreshold          DECIMAL(5,2)  = 60.0,             -- Ngưỡng % dung lượng file log để kích hoạt backup
+    @MinUsedLogMBToTrigger         INT           = 5120,             -- Dung lượng used tối thiểu (MB) để kích hoạt theo %
+    @MaxMinutesBetweenLogBackups   INT           = 30,               -- Khoảng cách tối đa giữa các lần backup (phút)
+    @MaxLogSendQueueMBWarning      BIGINT        = 1024,             -- Ngưỡng cảnh báo Send Queue (MB)
+    @MaxRedoQueueMBWarning         BIGINT        = 2048,             -- Ngưỡng cảnh báo Redo Queue (MB)
+    @BackupDirectory               NVARCHAR(500) = N'D:\Backup\Tranlogs', -- Đường dẫn lưu trữ backup
+    @PurgeAuditDays                INT           = 14                -- Giữ lịch sử audit log trong X ngày
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    --------------------------------------------------------------------
+    -- 1. CHỐNG OVERLAP BẰNG MUTEX APPLICATION LOCK (Session Scope)
+    --------------------------------------------------------------------
+    DECLARE @LockResult INT;
+    EXEC @LockResult = sys.sp_getapplock
+        @Resource    = N'Global_AdaptiveLogBackup_Lock',
+        @LockMode    = N'Exclusive',
+        @LockOwner   = N'Session',
+        @LockTimeout = 0; -- Nếu phiên trước đang chạy, thoát ngay lập tức
+
+    IF @LockResult < 0
+    BEGIN
+        PRINT '[MUTEX] Phien AdaptiveLogBackup truoc do chua hoan tat. Thoat phien hien tai.';
+        RETURN;
+    END
+
+    BEGIN TRY
+        ----------------------------------------------------------------
+        -- 2. KIỂM TRA ĐIỀU KIỆN AG PRIMARY REPLICA
+        ----------------------------------------------------------------
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM sys.databases d
+            WHERE d.group_database_id IS NOT NULL 
+              AND sys.fn_hadr_is_primary_replica(d.name) = 1
+              AND d.state_desc = 'ONLINE'
+              AND d.recovery_model_desc = 'FULL'
+        )
+        BEGIN
+            EXEC sys.sp_releaseapplock @Resource = N'Global_AdaptiveLogBackup_Lock', @LockOwner = N'Session';
+            RETURN;
+        END
+
+        ----------------------------------------------------------------
+        -- 3. ĐỌC DUNG LƯỢNG QUA sys.dm_db_log_space_usage (BẮT LỖI TỪNG DB)
+        ----------------------------------------------------------------
+        -- Bảng tạm này chỉ dùng để chứa kết quả raw của dynamic query cross-database
+        CREATE TABLE #LogMetrics (
+            DBName sysname PRIMARY KEY,
+            TotalLogMB DECIMAL(18,2),
+            UsedLogMB DECIMAL(18,2),
+            UsedLogPercent DECIMAL(5,2),
+            ErrorMessage NVARCHAR(4000) NULL
+        );
+
+        DECLARE @SqlCheck NVARCHAR(MAX) = N'';
+
+        SELECT @SqlCheck = @SqlCheck + N'
+        BEGIN TRY
+            INSERT INTO #LogMetrics (DBName, TotalLogMB, UsedLogMB, UsedLogPercent, ErrorMessage)
+            SELECT 
+                ' + QUOTENAME(d.name, '''') + N',
+                CAST(total_log_size_in_bytes / 1048576.0 AS DECIMAL(18,2)),
+                CAST(used_log_space_in_bytes / 1048576.0 AS DECIMAL(18,2)),
+                CAST(used_log_space_in_percent AS DECIMAL(5,2)),
+                NULL
+            FROM ' + QUOTENAME(d.name) + N'.sys.dm_db_log_space_usage;
+        END TRY
+        BEGIN CATCH
+            INSERT INTO #LogMetrics (DBName, TotalLogMB, UsedLogMB, UsedLogPercent, ErrorMessage)
+            VALUES (' + QUOTENAME(d.name, '''') + N', NULL, NULL, NULL, ERROR_MESSAGE());
+        END CATCH;'
+        FROM sys.databases d
+        WHERE d.group_database_id IS NOT NULL
+          AND sys.fn_hadr_is_primary_replica(d.name) = 1
+          AND d.state_desc = 'ONLINE'
+          AND d.recovery_model_desc = 'FULL';
+
+        EXEC sys.sp_executesql @SqlCheck;
+
+        ----------------------------------------------------------------
+        -- 4. PIPELINE CTE + OUTPUT: ĐÁNH GIÁ, GHI AUDIT VÀ THU THẬP TARGET DB
+        -- (Không qua bảng staging, xử lý hoàn toàn qua Memory Stream)
+        ----------------------------------------------------------------
+        
+        -- Biến bảng siêu nhẹ chỉ chứa duy nhất danh sách DB cần backup (vài byte)
+        DECLARE @TargetDatabases TABLE (DBName sysname PRIMARY KEY);
+
+        ;WITH EvaluatedMetrics AS (
+            SELECT 
+                lm.DBName,
+                lm.TotalLogMB,
+                lm.UsedLogMB,
+                lm.UsedLogPercent,
+                DATEDIFF(MINUTE, ISNULL(lb.last_log_backup, '1900-01-01'), GETDATE()) AS MinutesSinceLastBackup,
+                d.log_reuse_wait_desc AS LogReuseWait,
+                ISNULL(ag_stats.MaxSendQueueMB, 0) AS MaxSendQueueMB,
+                ISNULL(ag_stats.MaxRedoQueueMB, 0) AS MaxRedoQueueMB,
+                -- Ánh xạ severity sang chuỗi text chính xác
+                CASE ag_stats.WorstSyncHealthLevel
+                    WHEN 3 THEN N'NOT_HEALTHY'
+                    WHEN 2 THEN N'PARTIALLY_HEALTHY'
+                    WHEN 1 THEN N'HEALTHY'
+                    ELSE N'UNKNOWN'
+                END AS WorstSyncHealth,
+                -- Phân cấp hành vi (ActionTaken)
+                CASE 
+                    WHEN lm.ErrorMessage IS NOT NULL THEN 'ERROR'
+                    WHEN (
+                        DATEDIFF(MINUTE, ISNULL(lb.last_log_backup, '1900-01-01'), GETDATE()) >= @MaxMinutesBetweenLogBackups
+                        OR (lm.UsedLogPercent >= @LogPercentThreshold AND lm.UsedLogMB >= @MinUsedLogMBToTrigger)
+                    ) THEN 'BACKUP'
+                    WHEN (
+                        ag_stats.MaxSendQueueMB > @MaxLogSendQueueMBWarning
+                        OR ag_stats.MaxRedoQueueMB > @MaxRedoQueueMBWarning
+                        OR d.log_reuse_wait_desc = 'AVAILABILITY_REPLICA'
+                        OR ag_stats.WorstSyncHealthLevel >= 2
+                    ) THEN 'AG_WARNING'
+                    ELSE 'SKIP'
+                END AS ActionTaken,
+                -- Chi tiết nguyên nhân theo thứ tự ưu tiên
+                CASE 
+                    WHEN lm.ErrorMessage IS NOT NULL THEN N'DMV_QUERY_FAILED'
+                    WHEN DATEDIFF(MINUTE, ISNULL(lb.last_log_backup, '1900-01-01'), GETDATE()) >= @MaxMinutesBetweenLogBackups
+                     AND lm.UsedLogPercent >= @LogPercentThreshold 
+                     AND lm.UsedLogMB >= @MinUsedLogMBToTrigger
+                        THEN N'RPO + LOG_PRESSURE'
+                    WHEN DATEDIFF(MINUTE, ISNULL(lb.last_log_backup, '1900-01-01'), GETDATE()) >= @MaxMinutesBetweenLogBackups
+                        THEN CONCAT(N'RPO_INTERVAL (', DATEDIFF(MINUTE, ISNULL(lb.last_log_backup, '1900-01-01'), GETDATE()), N' mins)')
+                    WHEN lm.UsedLogPercent >= @LogPercentThreshold 
+                     AND lm.UsedLogMB >= @MinUsedLogMBToTrigger
+                        THEN CONCAT(N'LOG_PRESSURE (', lm.UsedLogPercent, N'%, ', CAST(lm.UsedLogMB AS INT), N' MB)')
+                    ELSE NULL
+                END AS TriggerReason,
+                lm.ErrorMessage
+            FROM #LogMetrics lm
+            JOIN sys.databases d ON lm.DBName = d.name
+            OUTER APPLY (
+                -- Lấy lần log backup gần nhất trên node Primary hiện tại
+                SELECT MAX(bs.backup_finish_date) AS last_log_backup
+                FROM msdb.dbo.backupset bs
+                WHERE bs.database_name = lm.DBName 
+                  AND bs.type = 'L'
+                  AND bs.server_name = SERVERPROPERTY('ServerName')
+            ) lb
+            OUTER APPLY (
+                -- Đo lường sức khỏe các Secondary Replicas
+                SELECT 
+                    MAX(drs.log_send_queue_size) / 1024 AS MaxSendQueueMB,
+                    MAX(drs.redo_queue_size) / 1024 AS MaxRedoQueueMB,
+                    MAX(
+                        CASE drs.synchronization_health_desc
+                            WHEN 'NOT_HEALTHY'       THEN 3
+                            WHEN 'PARTIALLY_HEALTHY' THEN 2
+                            WHEN 'HEALTHY'           THEN 1
+                            ELSE 0
+                        END
+                    ) AS WorstSyncHealthLevel
+                FROM sys.dm_hadr_database_replica_states drs
+                WHERE drs.database_id = d.database_id
+                  AND drs.is_local = 0
+            ) ag_stats
+        )
+        INSERT INTO @TargetDatabases (DBName)
+        SELECT DatabaseName
+        FROM (
+            INSERT INTO dbo.AdaptiveLogBackupLog (
+                DatabaseName, TotalLogMB, UsedLogMB, UsedLogPercent,
+                MinutesSinceLastBackup, LogReuseWait,
+                MaxSendQueueMB, MaxRedoQueueMB, WorstSyncHealth,
+                ActionTaken, TriggerReason, ErrorMessage
+            )
+            OUTPUT 
+                inserted.DatabaseName,
+                inserted.ActionTaken
+            SELECT 
+                DBName, TotalLogMB, UsedLogMB, UsedLogPercent,
+                MinutesSinceLastBackup, LogReuseWait,
+                MaxSendQueueMB, MaxRedoQueueMB, WorstSyncHealth,
+                ActionTaken, TriggerReason, ErrorMessage
+            FROM EvaluatedMetrics
+        ) AS LogOutput
+        WHERE ActionTaken = 'BACKUP';
+
+        -- Dọn dẹp log lịch sử cũ
+        DELETE FROM dbo.AdaptiveLogBackupLog
+        WHERE RunTime < DATEADD(DAY, -@PurgeAuditDays, SYSDATETIME());
+
+        ----------------------------------------------------------------
+        -- 5. TẬP HỢP DANH SÁCH VÀ GỌI OLA HALLENGREN (1 COMMAND DUY NHẤT)
+        ----------------------------------------------------------------
+        DECLARE @DatabaseList NVARCHAR(MAX);
+
+        SELECT @DatabaseList = STRING_AGG(DBName, ',') WITHIN GROUP (ORDER BY DBName)
+        FROM @TargetDatabases;
+
+        IF @DatabaseList IS NOT NULL
+        BEGIN
+            PRINT CONCAT(N'[ADAPTIVE LOG BACKUP] Khoi chay backup cho: ', @DatabaseList);
+
+            EXECUTE [master].[dbo].[DatabaseBackup]
+                @Databases          = @DatabaseList,
+                @Directory          = @BackupDirectory,
+                @BackupType         = 'LOG',
+                @Verify             = 'N',
+                @Compress           = 'Y',
+                @CheckSum           = 'Y',
+                @LogToTable         = 'Y';
+        END
+
+        DROP TABLE #LogMetrics;
+
+    END TRY
+    BEGIN CATCH
+        -- Luôn giải phóng lock nếu phát sinh lỗi ngoài ý muốn
+        EXEC sys.sp_releaseapplock @Resource = N'Global_AdaptiveLogBackup_Lock', @LockOwner = N'Session';
+        THROW;
+    END CATCH;
+
+    -- Giải phóng lock khi hoàn thành bình thường
+    EXEC sys.sp_releaseapplock @Resource = N'Global_AdaptiveLogBackup_Lock', @LockOwner = N'Session';
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_AdaptiveLogBackup4Sql2016]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		nghianl.ts
+-- Create date: 160926
+-- Description:	-- Description:	Bản chất: Là thủ tục sao lưu Transaction Log có khả năng tự điều chỉnh (Adaptive) và tự phối hợp giữa các node Primary – Secondary thông qua Application Lock (sp_getapplock / sp_releaseapplock).
+-- Version: 2014 - 2016
+-- Ý nghĩa & Mục đích giải quyết:
+	-- Chống xung đột giẫm chân (Exclusive Locking): Dùng ổ khóa tên Global_AdaptiveLogBackup_Lock với phạm vi Session. Khi Node A (ví dụ: Secondary) đang thực hiện backup log, Node B (Primary) nếu chạy cùng lúc sẽ không xin được khóa và tự động rút lui trong an toàn, tránh làm nghẽn I/O đĩa và lock bảng hệ thống.
+	-- Giải phóng khóa chuẩn xác (sp_releaseapplock): Đảm bảo ngay khi tiến trình backup log vừa hoàn tất (hoặc gặp lỗi văng ra), ổ khóa được nhả ngay lập tức để lượt backup 10–15 phút kế tiếp không bị treo.
+	-- Bảo toàn chuỗi LSN (Log Sequence Number): Giữ cho chuỗi file backup log luôn tuần tự và liền mạch, tránh tình trạng hai máy cùng xuất file backup log đan xen nhau gây khó khăn cho việc khôi phục (Disaster Recovery).
+	-- Thích ứng theo tải (Adaptive): Khi kết hợp với các tác vụ bảo trì sinh nhiều log (như Reorganize/Rebuild Index), cơ chế này kích hoạt backup log dày hơn nhằm liên tục tái sử dụng các Virtual Log Files (VLF), giữ cho kích thước file .ldf ổn định.
+-- Rủi ro logic trong Always On AG:
+	--  Khi AG failover từ Node A sang Node B, trên Node B bảng msdb.dbo.backupset chưa có lịch sử backup mà Node A đã thực hiện trước đó (do msdb là database độc lập trên từng instance, không đồng bộ qua AG).
+	--  Điều này khiến last_log_backup trả về NULL, dẫn đến DATEDIFF tính từ '1900-01-01' và procedure sẽ kích hoạt backup ngay lập tức trong lần chạy đầu tiên sau failover.
+-- =============================================
+CREATE PROCEDURE [dbo].[usp_AdaptiveLogBackup4Sql2016]
+    @LogPercentThreshold          DECIMAL(5,2)  = 60.0,              -- Ngưỡng % dung lượng file log để kích hoạt backup
+    @MinUsedLogMBToTrigger         INT           = 5120,              -- Dung lượng used tối thiểu (MB) để kích hoạt theo %
+    @MaxMinutesBetweenLogBackups   INT           = 30,                -- Khoảng cách tối đa giữa các lần backup (phút)
+    @MaxLogSendQueueMBWarning      BIGINT        = 1024,              -- Ngưỡng cảnh báo Send Queue (MB)
+    @MaxRedoQueueMBWarning          BIGINT        = 2048,              -- Ngưỡng cảnh báo Redo Queue (MB)
+    @BackupDirectory                NVARCHAR(500) = N'D:\Backup\Tranlogs', -- Đường dẫn lưu trữ backup
+    @PurgeAuditDays                INT           = 14                 -- Giữ lịch sử audit log trong X ngày
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    --------------------------------------------------------------------
+    -- 1. CHỐNG OVERLAP BẰNG MUTEX APPLICATION LOCK (Session Scope)
+    --------------------------------------------------------------------
+    DECLARE @LockResult INT;
+    EXEC @LockResult = sys.sp_getapplock
+        @Resource    = N'Global_AdaptiveLogBackup_Lock',
+        @LockMode    = N'Exclusive',
+        @LockOwner   = N'Session',
+        @LockTimeout = 0; -- Nếu phiên trước đang chạy, thoát ngay lập tức
+
+    IF @LockResult < 0
+    BEGIN
+        PRINT '[MUTEX] Phien AdaptiveLogBackup truoc do chua hoan tat. Thoat phien hien tai.';
+        RETURN;
+    END
+
+    BEGIN TRY
+        ----------------------------------------------------------------
+        -- 2. KIỂM TRA ĐIỀU KIỆN AG PRIMARY REPLICA
+        ----------------------------------------------------------------
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM sys.databases d
+            WHERE d.group_database_id IS NOT NULL 
+              AND sys.fn_hadr_is_primary_replica(d.name) = 1
+              AND d.state_desc = 'ONLINE'
+              AND d.recovery_model_desc = 'FULL'
+        )
+        BEGIN
+            EXEC sys.sp_releaseapplock @Resource = N'Global_AdaptiveLogBackup_Lock', @LockOwner = N'Session';
+            RETURN;
+        END
+
+        ----------------------------------------------------------------
+        -- 3. ĐỌC DUNG LƯỢNG QUA sys.dm_db_log_space_usage (BẮT LỖI TỪNG DB)
+        ----------------------------------------------------------------
+        CREATE TABLE #LogMetrics (
+            DBName sysname PRIMARY KEY,
+            TotalLogMB DECIMAL(18,2),
+            UsedLogMB DECIMAL(18,2),
+            UsedLogPercent DECIMAL(5,2),
+            ErrorMessage NVARCHAR(4000) NULL
+        );
+
+        DECLARE @SqlCheck NVARCHAR(MAX) = N'';
+
+        SELECT @SqlCheck = @SqlCheck + N'
+        BEGIN TRY
+            INSERT INTO #LogMetrics (DBName, TotalLogMB, UsedLogMB, UsedLogPercent, ErrorMessage)
+            SELECT 
+                ' + QUOTENAME(d.name, '''') + N',
+                CAST(total_log_size_in_bytes / 1048576.0 AS DECIMAL(18,2)),
+                CAST(used_log_space_in_bytes / 1048576.0 AS DECIMAL(18,2)),
+                CAST(used_log_space_in_percent AS DECIMAL(5,2)),
+                NULL
+            FROM ' + QUOTENAME(d.name) + N'.sys.dm_db_log_space_usage;
+        END TRY
+        BEGIN CATCH
+            INSERT INTO #LogMetrics (DBName, TotalLogMB, UsedLogMB, UsedLogPercent, ErrorMessage)
+            VALUES (' + QUOTENAME(d.name, '''') + N', NULL, NULL, NULL, ERROR_MESSAGE());
+        END CATCH;'
+        FROM sys.databases d
+        WHERE d.group_database_id IS NOT NULL
+          AND sys.fn_hadr_is_primary_replica(d.name) = 1
+          AND d.state_desc = 'ONLINE'
+          AND d.recovery_model_desc = 'FULL';
+
+        EXEC sys.sp_executesql @SqlCheck;
+
+        ----------------------------------------------------------------
+        -- 4. PIPELINE CTE + OUTPUT: ĐÁNH GIÁ, GHI AUDIT VÀ THU THẬP TARGET DB
+        ----------------------------------------------------------------
+        DECLARE @TargetDatabases TABLE (DBName sysname PRIMARY KEY);
+
+        ;WITH EvaluatedMetrics AS (
+            SELECT 
+                lm.DBName,
+                lm.TotalLogMB,
+                lm.UsedLogMB,
+                lm.UsedLogPercent,
+                DATEDIFF(MINUTE, ISNULL(lb.last_log_backup, '1900-01-01'), GETDATE()) AS MinutesSinceLastBackup,
+                d.log_reuse_wait_desc AS LogReuseWait,
+                ISNULL(ag_stats.MaxSendQueueMB, 0) AS MaxSendQueueMB,
+                ISNULL(ag_stats.MaxRedoQueueMB, 0) AS MaxRedoQueueMB,
+                CASE ag_stats.WorstSyncHealthLevel
+                    WHEN 3 THEN N'NOT_HEALTHY'
+                    WHEN 2 THEN N'PARTIALLY_HEALTHY'
+                    WHEN 1 THEN N'HEALTHY'
+                    ELSE N'UNKNOWN'
+                END AS WorstSyncHealth,
+                CASE 
+                    WHEN lm.ErrorMessage IS NOT NULL THEN 'ERROR'
+                    WHEN (
+                        DATEDIFF(MINUTE, ISNULL(lb.last_log_backup, '1900-01-01'), GETDATE()) >= @MaxMinutesBetweenLogBackups
+                        OR (lm.UsedLogPercent >= @LogPercentThreshold AND lm.UsedLogMB >= @MinUsedLogMBToTrigger)
+                    ) THEN 'BACKUP'
+                    WHEN (
+                        ag_stats.MaxSendQueueMB > @MaxLogSendQueueMBWarning
+                        OR ag_stats.MaxRedoQueueMB > @MaxRedoQueueMBWarning
+                        OR d.log_reuse_wait_desc = 'AVAILABILITY_REPLICA'
+                        OR ag_stats.WorstSyncHealthLevel >= 2
+                    ) THEN 'AG_WARNING'
+                    ELSE 'SKIP'
+                END AS ActionTaken,
+                CASE 
+                    WHEN lm.ErrorMessage IS NOT NULL THEN N'DMV_QUERY_FAILED'
+                    WHEN DATEDIFF(MINUTE, ISNULL(lb.last_log_backup, '1900-01-01'), GETDATE()) >= @MaxMinutesBetweenLogBackups
+                     AND lm.UsedLogPercent >= @LogPercentThreshold 
+                     AND lm.UsedLogMB >= @MinUsedLogMBToTrigger
+                        THEN N'RPO + LOG_PRESSURE'
+                    WHEN DATEDIFF(MINUTE, ISNULL(lb.last_log_backup, '1900-01-01'), GETDATE()) >= @MaxMinutesBetweenLogBackups
+                        THEN CONCAT(N'RPO_INTERVAL (', DATEDIFF(MINUTE, ISNULL(lb.last_log_backup, '1900-01-01'), GETDATE()), N' mins)')
+                    WHEN lm.UsedLogPercent >= @LogPercentThreshold 
+                     AND lm.UsedLogMB >= @MinUsedLogMBToTrigger
+                        THEN CONCAT(N'LOG_PRESSURE (', lm.UsedLogPercent, N'%, ', CAST(lm.UsedLogMB AS INT), N' MB)')
+                    ELSE NULL
+                END AS TriggerReason,
+                lm.ErrorMessage
+            FROM #LogMetrics lm
+            JOIN sys.databases d ON lm.DBName = d.name
+            OUTER APPLY (
+                SELECT MAX(bs.backup_finish_date) AS last_log_backup
+                FROM msdb.dbo.backupset bs
+                WHERE bs.database_name = lm.DBName 
+                  AND bs.type = 'L'
+                  AND bs.server_name = SERVERPROPERTY('ServerName')
+            ) lb
+            OUTER APPLY (
+                SELECT 
+                    MAX(drs.log_send_queue_size) / 1024 AS MaxSendQueueMB,
+                    MAX(drs.redo_queue_size) / 1024 AS MaxRedoQueueMB,
+                    MAX(
+                        CASE drs.synchronization_health_desc
+                            WHEN 'NOT_HEALTHY'       THEN 3
+                            WHEN 'PARTIALLY_HEALTHY' THEN 2
+                            WHEN 'HEALTHY'           THEN 1
+                            ELSE 0
+                        END
+                    ) AS WorstSyncHealthLevel
+                FROM sys.dm_hadr_database_replica_states drs
+                WHERE drs.database_id = d.database_id
+                  AND drs.is_local = 0
+            ) ag_stats
+        )
+        INSERT INTO @TargetDatabases (DBName)
+        SELECT DatabaseName
+        FROM (
+            INSERT INTO dbo.AdaptiveLogBackupLog (
+                DatabaseName, TotalLogMB, UsedLogMB, UsedLogPercent,
+                MinutesSinceLastBackup, LogReuseWait,
+                MaxSendQueueMB, MaxRedoQueueMB, WorstSyncHealth,
+                ActionTaken, TriggerReason, ErrorMessage
+            )
+            OUTPUT 
+                inserted.DatabaseName,
+                inserted.ActionTaken
+            SELECT 
+                DBName, TotalLogMB, UsedLogMB, UsedLogPercent,
+                MinutesSinceLastBackup, LogReuseWait,
+                MaxSendQueueMB, MaxRedoQueueMB, WorstSyncHealth,
+                ActionTaken, TriggerReason, ErrorMessage
+            FROM EvaluatedMetrics
+        ) AS LogOutput
+        WHERE ActionTaken = 'BACKUP';
+
+        -- Dọn dẹp log lịch sử cũ
+        DELETE FROM dbo.AdaptiveLogBackupLog
+        WHERE RunTime < DATEADD(DAY, -@PurgeAuditDays, SYSDATETIME());
+
+        ----------------------------------------------------------------
+        -- 5. TẬP HỢP DANH SÁCH BẰNG XML PATH (TƯƠNG THÍCH SQL 2014/2016)
+        ----------------------------------------------------------------
+        DECLARE @DatabaseList NVARCHAR(MAX);
+
+        SELECT @DatabaseList = STUFF((
+            SELECT ',' + DBName
+            FROM @TargetDatabases
+            ORDER BY DBName
+            FOR XML PATH(''), TYPE
+        ).value('.', 'NVARCHAR(MAX)'), 1, 1, '');
+
+        IF @DatabaseList IS NOT NULL
+        BEGIN
+            PRINT CONCAT(N'[ADAPTIVE LOG BACKUP] Khoi chay backup cho: ', @DatabaseList);
+
+            EXECUTE [master].[dbo].[DatabaseBackup]
+                @Databases          = @DatabaseList,
+                @Directory          = @BackupDirectory,
+                @BackupType         = 'LOG',
+                @Verify             = 'N',
+                @Compress           = 'Y',
+                @CheckSum           = 'Y',
+                @LogToTable         = 'Y';
+        END
+
+        DROP TABLE #LogMetrics;
+
+    END TRY
+    BEGIN CATCH
+        EXEC sys.sp_releaseapplock @Resource = N'Global_AdaptiveLogBackup_Lock', @LockOwner = N'Session';
+        THROW;
+    END CATCH;
+
+    EXEC sys.sp_releaseapplock @Resource = N'Global_AdaptiveLogBackup_Lock', @LockOwner = N'Session';
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_AgCheck]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[usp_AgCheck]
+(
+    @DatabaseName                   sysname,
+
+    ------------------------------------------------------------------------
+    -- STOP thresholds (Chặn đứng thao tác)
+    ------------------------------------------------------------------------
+    @StopLogUsedPct                 INT          = 90,
+    @StopLogVolumeFreeSpacePct      INT          = 10,
+    @StopLogVolumeMinFreeMB         BIGINT       = 10240,   -- STOP nếu ổ chứa LDF còn < 10 GB
+    @StopLogSendQueueMB             BIGINT       = 10240,   -- 10 GB
+    @StopRedoQueueMB                BIGINT       = 20480,   -- 20 GB
+
+    ------------------------------------------------------------------------
+    -- WARN thresholds (Cảnh báo / Throttle DOP)
+    ------------------------------------------------------------------------
+    @WarnLogUsedPct                 INT          = 75,
+    @WarnLogVolumeFreeSpacePct      INT          = 20,
+    @WarnLogVolumeMinFreeMB         BIGINT       = 20480,   -- 20 GB
+    @WarnLogSendQueueMB             BIGINT       = 5120,    -- 5 GB
+    @WarnRedoQueueMB                BIGINT       = 10240,   -- 10 GB
+
+    ------------------------------------------------------------------------
+    -- Policy
+    ------------------------------------------------------------------------
+    @RequireSecondaryReplicas       BIT          = 1,
+
+    ------------------------------------------------------------------------
+    -- Verdict Outputs
+    ------------------------------------------------------------------------
+    @OverallVerdict                 VARCHAR(10)  OUTPUT,    -- 'ALLOW', 'WARN', 'STOP'
+    @Reason                         NVARCHAR(1000) OUTPUT,  -- Lý do chi tiết
+
+    ------------------------------------------------------------------------
+    -- Telemetry Outputs
+    ------------------------------------------------------------------------
+    @LogUsedPct                     DECIMAL(5,2) OUTPUT,
+    @LogUsedMB                      DECIMAL(18,2) OUTPUT,
+    @TotalLogMB                     DECIMAL(18,2) OUTPUT,
+    @LogFreeMB                      DECIMAL(18,2) OUTPUT,
+    @LogReuseWait                   NVARCHAR(60) OUTPUT,
+    @MinVolumeFreePct               DECIMAL(5,2) OUTPUT,
+    @MinVolumeFreeMB                BIGINT       OUTPUT,
+    @MaxSendQueueMB                 BIGINT       OUTPUT,
+    @MaxRedoQueueMB                 BIGINT       OUTPUT,
+    @WorstSyncState                 NVARCHAR(60) OUTPUT,
+    @WorstSyncHealth                NVARCHAR(60) OUTPUT,
+    @WorstConnectedState            NVARCHAR(60) OUTPUT,
+    @HasSynchronousSecondary        BIT          OUTPUT,
+    @WorstSendQueueReplica          sysname      OUTPUT,
+    @WorstRedoQueueReplica          sysname      OUTPUT,
+    @WorstSuspended                 BIT          OUTPUT,
+    @WorstSuspendedReplica          sysname      OUTPUT,
+    @SuspendReason                  NVARCHAR(60) OUTPUT
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    ------------------------------------------------------------------------
+    -- 0. KHỞI TẠO ĐẦU RA AN TOÀN
+    ------------------------------------------------------------------------
+    SET @OverallVerdict          = 'STOP';
+    SET @Reason                  = N'Guard chưa hoàn tất kiểm tra.';
+
+    SET @LogUsedPct              = NULL;
+    SET @LogUsedMB               = NULL;
+    SET @TotalLogMB              = NULL;
+    SET @LogFreeMB               = NULL;
+    SET @LogReuseWait            = NULL;
+    SET @MinVolumeFreePct        = NULL;
+    SET @MinVolumeFreeMB         = NULL;
+    SET @MaxSendQueueMB          = NULL;
+    SET @MaxRedoQueueMB          = NULL;
+    SET @WorstSyncState          = NULL;
+    SET @WorstSyncHealth         = NULL;
+    SET @WorstConnectedState     = NULL;
+    SET @HasSynchronousSecondary = 0;
+    SET @WorstSendQueueReplica   = NULL;
+    SET @WorstRedoQueueReplica   = NULL;
+    SET @WorstSuspended          = NULL;
+    SET @WorstSuspendedReplica   = NULL;
+    SET @SuspendReason           = NULL;
+
+    ------------------------------------------------------------------------
+    -- 1. XÁC THỰC THAM SỐ ĐẦU VÀO (BAO GỒM CẢ CÁC NGƯỠNG MB)
+    ------------------------------------------------------------------------
+    IF NULLIF(LTRIM(RTRIM(@DatabaseName)), N'') IS NULL
+    BEGIN
+        SET @Reason = N'DatabaseName không được NULL hoặc rỗng.';
+        GOTO ExitWithResultSet;
+    END;
+
+    IF @StopLogUsedPct NOT BETWEEN 1 AND 100 
+       OR @WarnLogUsedPct NOT BETWEEN 0 AND 100
+       OR @StopLogVolumeFreeSpacePct NOT BETWEEN 0 AND 100 
+       OR @WarnLogVolumeFreeSpacePct NOT BETWEEN 0 AND 100
+       OR @StopLogVolumeMinFreeMB < 0 
+       OR @WarnLogVolumeMinFreeMB < 0
+       OR @StopLogSendQueueMB < 0 
+       OR @WarnLogSendQueueMB < 0 
+       OR @StopRedoQueueMB < 0 
+       OR @WarnRedoQueueMB < 0
+       OR @WarnLogUsedPct >= @StopLogUsedPct
+       OR @WarnLogVolumeFreeSpacePct <= @StopLogVolumeFreeSpacePct
+       OR @WarnLogVolumeMinFreeMB <= @StopLogVolumeMinFreeMB
+       OR @WarnLogSendQueueMB >= @StopLogSendQueueMB
+       OR @WarnRedoQueueMB >= @StopRedoQueueMB
+    BEGIN
+        SET @Reason = N'Tham số cấu hình ngưỡng không hợp lệ hoặc logic WARN/STOP bị sai (ngưỡng WARN phải nhạy hơn STOP và không âm).';
+        GOTO ExitWithResultSet;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 2. KIỂM TRA DATABASE VÀ VAI TRÒ PRIMARY
+    ------------------------------------------------------------------------
+    DECLARE @DatabaseId INT, @DatabaseState NVARCHAR(60), @GroupDatabaseId UNIQUEIDENTIFIER;
+
+    SELECT 
+        @DatabaseId      = d.database_id,
+        @DatabaseState   = d.state_desc,
+        @GroupDatabaseId = d.group_database_id,
+        @LogReuseWait    = d.log_reuse_wait_desc
+    FROM sys.databases AS d
+    WHERE d.name = @DatabaseName;
+
+    IF @DatabaseId IS NULL
+    BEGIN
+        SET @Reason = CONCAT(N'Database [', @DatabaseName, N'] không tồn tại.');
+        GOTO ExitWithResultSet;
+    END;
+
+    IF @DatabaseState <> N'ONLINE'
+    BEGIN
+        SET @Reason = CONCAT(N'Database [', @DatabaseName, N'] không ONLINE. State = ', @DatabaseState);
+        GOTO ExitWithResultSet;
+    END;
+
+    IF @GroupDatabaseId IS NOT NULL
+    BEGIN
+        IF ISNULL(sys.fn_hadr_is_primary_replica(@DatabaseName), 0) <> 1
+        BEGIN
+            SET @Reason = CONCAT(N'Instance hiện tại KHÔNG PHẢI là Primary Replica của database [', @DatabaseName, N'].');
+            GOTO ExitWithResultSet;
+        END;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 3. TRANSACTION LOG TELEMETRY
+    ------------------------------------------------------------------------
+    DECLARE @SqlDynamic NVARCHAR(MAX) = N'
+        SELECT
+            @p_TotalLogMB = CAST(total_log_size_in_bytes / 1048576.0 AS DECIMAL(18,2)),
+            @p_LogUsedMB  = CAST(used_log_space_in_bytes / 1048576.0 AS DECIMAL(18,2)),
+            @p_LogFreeMB  = CAST((total_log_size_in_bytes - used_log_space_in_bytes) / 1048576.0 AS DECIMAL(18,2)),
+            @p_LogUsedPct = CAST(used_log_space_in_percent AS DECIMAL(5,2))
+        FROM ' + QUOTENAME(@DatabaseName) + N'.sys.dm_db_log_space_usage;';
+
+    BEGIN TRY
+        EXEC sys.sp_executesql
+            @SqlDynamic,
+            N'@p_TotalLogMB DECIMAL(18,2) OUTPUT, @p_LogUsedMB DECIMAL(18,2) OUTPUT, 
+              @p_LogFreeMB DECIMAL(18,2) OUTPUT, @p_LogUsedPct DECIMAL(5,2) OUTPUT',
+            @p_TotalLogMB = @TotalLogMB OUTPUT,
+            @p_LogUsedMB  = @LogUsedMB OUTPUT,
+            @p_LogFreeMB  = @LogFreeMB OUTPUT,
+            @p_LogUsedPct = @LogUsedPct OUTPUT;
+    END TRY
+    BEGIN CATCH
+        SET @Reason = CONCAT(N'Lỗi đọc DMV log_space_usage của [', @DatabaseName, N']: ', ERROR_MESSAGE());
+        GOTO ExitWithResultSet;
+    END CATCH;
+
+    IF @TotalLogMB IS NULL OR @LogUsedMB IS NULL OR @LogUsedPct IS NULL
+    BEGIN
+        SET @Reason = N'Không lấy được dữ liệu Telemetry của Transaction Log. Chuyển STOP an toàn.';
+        GOTO ExitWithResultSet;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 4. VOLUME CHỨA FILE LDF
+    ------------------------------------------------------------------------
+    BEGIN TRY
+        SELECT 
+            @MinVolumeFreePct = MIN(CAST(vs.available_bytes * 100.0 / NULLIF(vs.total_bytes, 0) AS DECIMAL(5,2))),
+            @MinVolumeFreeMB  = MIN(vs.available_bytes / 1048576)
+        FROM (
+            SELECT DISTINCT database_id, file_id 
+            FROM sys.master_files 
+            WHERE database_id = @DatabaseId AND type_desc = N'LOG'
+        ) AS mf
+        CROSS APPLY sys.dm_os_volume_stats(mf.database_id, mf.file_id) AS vs;
+    END TRY
+    BEGIN CATCH
+        SET @Reason = CONCAT(N'Không thể kiểm tra dung lượng Volume chứa LDF: ', ERROR_MESSAGE());
+        GOTO ExitWithResultSet;
+    END CATCH;
+
+    IF @MinVolumeFreePct IS NULL OR @MinVolumeFreeMB IS NULL
+    BEGIN
+        SET @Reason = N'Không xác định được dung lượng Volume chứa LDF. Chuyển STOP an toàn.';
+        GOTO ExitWithResultSet;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 5. AG TELEMETRY (TẬP TRUNG 1 QUERY, SỬA DỨT ĐIỂM UNKNOWN MAPPING & TIE-BREAKER)
+    ------------------------------------------------------------------------
+    IF @GroupDatabaseId IS NULL
+    BEGIN
+        SET @MaxSendQueueMB          = 0;
+        SET @MaxRedoQueueMB          = 0;
+        SET @WorstSyncState          = N'NOT_IN_AG';
+        SET @WorstSyncHealth         = N'NOT_IN_AG';
+        SET @WorstConnectedState     = N'NOT_IN_AG';
+        SET @HasSynchronousSecondary = 0;
+        SET @WorstSuspended          = 0;
+        SET @SuspendReason           = N'NOT_IN_AG';
+    END
+    ELSE
+    BEGIN
+        ;WITH RemoteReplicas AS (
+            SELECT 
+                ar.replica_server_name,
+                CAST(drs.log_send_queue_size / 1024.0 AS BIGINT) AS SendQueueMB,
+                CAST(drs.redo_queue_size / 1024.0 AS BIGINT) AS RedoQueueMB,
+                ars.connected_state_desc, -- LẤY TỪ sys.dm_hadr_availability_replica_states
+                drs.synchronization_state_desc,
+                drs.synchronization_health_desc,
+                ar.availability_mode_desc,
+                drs.is_suspended,
+                drs.suspend_reason_desc,
+                -- Tie-breaker: Thêm tên replica để ổn định tuyệt đối
+                ROW_NUMBER() OVER (ORDER BY drs.log_send_queue_size DESC, ar.replica_server_name ASC) AS RankSendQ,
+                ROW_NUMBER() OVER (ORDER BY drs.redo_queue_size DESC, ar.replica_server_name ASC) AS RankRedoQ,
+                ROW_NUMBER() OVER (ORDER BY drs.is_suspended DESC, drs.suspend_reason DESC, ar.replica_server_name ASC) AS RankSuspend
+            FROM sys.dm_hadr_database_replica_states drs
+            INNER JOIN sys.availability_replicas ar 
+                ON ar.replica_id = drs.replica_id
+            -- JOIN THÊM DMV NÀY ĐỂ LẤY CONNECTED STATE HỢP LỆ TRÊN SQL SERVER 2019
+            LEFT JOIN sys.dm_hadr_availability_replica_states ars 
+                ON ars.replica_id = drs.replica_id
+            WHERE drs.database_id = @DatabaseId 
+              AND drs.is_local = 0
+        )
+        SELECT 
+            @MaxSendQueueMB = MAX(SendQueueMB),
+            @MaxRedoQueueMB = MAX(RedoQueueMB),
+            
+            -- Trạng thái kết nối chuẩn (NULL hoặc không xác định rơi vào UNKNOWN)
+            @WorstConnectedState = CASE MAX(CASE connected_state_desc 
+                                                WHEN N'DISCONNECTED' THEN 3 
+                                                WHEN N'UNKNOWN'      THEN 2 
+                                                WHEN N'CONNECTED'    THEN 1 
+                                                ELSE 0 END)
+                                        WHEN 3 THEN N'DISCONNECTED' 
+                                        WHEN 2 THEN N'UNKNOWN' 
+                                        WHEN 1 THEN N'CONNECTED' 
+                                        ELSE N'UNKNOWN' END,
+
+            @WorstSyncState = CASE MAX(CASE synchronization_state_desc 
+                                            WHEN N'NOT SYNCHRONIZING' THEN 3 
+                                            WHEN N'SYNCHRONIZING'     THEN 2 
+                                            WHEN N'SYNCHRONIZED'      THEN 1 
+                                            ELSE 0 END)
+                                   WHEN 3 THEN N'NOT SYNCHRONIZING' 
+                                   WHEN 2 THEN N'SYNCHRONIZING' 
+                                   WHEN 1 THEN N'SYNCHRONIZED' 
+                                   ELSE N'UNKNOWN' END,
+
+            @WorstSyncHealth = CASE MAX(CASE synchronization_health_desc 
+                                             WHEN N'NOT_HEALTHY'       THEN 3 
+                                             WHEN N'PARTIALLY_HEALTHY' THEN 2 
+                                             WHEN N'HEALTHY'           THEN 1 
+                                             ELSE 0 END)
+                                    WHEN 3 THEN N'NOT_HEALTHY' 
+                                    WHEN 2 THEN N'PARTIALLY_HEALTHY' 
+                                    WHEN 1 THEN N'HEALTHY' 
+                                    ELSE N'UNKNOWN' END,
+
+            @HasSynchronousSecondary = ISNULL(MAX(CASE WHEN availability_mode_desc = N'SYNCHRONOUS_COMMIT' THEN 1 ELSE 0 END), 0),
+            @WorstSuspended          = ISNULL(MAX(CAST(is_suspended AS INT)), 0),
+            @WorstSendQueueReplica   = MAX(CASE WHEN RankSendQ = 1 THEN replica_server_name END),
+            @WorstRedoQueueReplica   = MAX(CASE WHEN RankRedoQ = 1 THEN replica_server_name END),
+            @WorstSuspendedReplica   = MAX(CASE WHEN RankSuspend = 1 AND is_suspended = 1 THEN replica_server_name END),
+            @SuspendReason           = MAX(CASE WHEN RankSuspend = 1 AND is_suspended = 1 THEN suspend_reason_desc END)
+        FROM RemoteReplicas;
+
+        -- Kiểm tra policy: Bắt buộc phải có ít nhất một Secondary hợp lệ
+        IF @RequireSecondaryReplicas = 1
+        BEGIN
+            IF @WorstConnectedState IS NULL
+            BEGIN
+                SET @OverallVerdict = 'STOP';
+                SET @Reason = N'Không phát hiện thấy bản ghi Secondary Replica nào trong DMV AG.';
+                GOTO ExitWithResultSet;
+            END;
+            IF @WorstConnectedState = N'UNKNOWN'
+            BEGIN
+                SET @OverallVerdict = 'STOP';
+                SET @Reason = N'Không thể xác định trạng thái kết nối của Secondary Replica (Trạng thái UNKNOWN).';
+                GOTO ExitWithResultSet;
+            END;
+        END;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 6. VERDICT ENGINE TẬP TRUNG (SẮP XẾP ƯU TIÊN NGUYÊN NHÂN RÕ RÀNG)
+    ------------------------------------------------------------------------
+    DECLARE @StopReason NVARCHAR(MAX) = N'', @WarnReason NVARCHAR(MAX) = N'';
+
+    -- 6.1. STOP CONDITIONS (Ưu tiên: Kết nối -> Suspend -> Sync -> Volume -> Log -> Queues)
+    IF @GroupDatabaseId IS NOT NULL
+    BEGIN
+        IF @WorstConnectedState IN (N'DISCONNECTED', N'UNKNOWN')
+            SET @StopReason += CONCAT(N'Secondary [', @WorstConnectedState, N']; ');
+
+        -- Policy: Khi Rebuild Index lớn, Secondary bị SUSPENDED bắt buộc phải STOP để tránh giữ Log LSN
+        IF @WorstSuspended = 1
+            SET @StopReason += CONCAT(N'Secondary SUSPENDED [Node: ', @WorstSuspendedReplica, 
+                                      N', Lý do: ', ISNULL(@SuspendReason, N'Không rõ'), N']; ');
+
+        IF @WorstSyncState = N'NOT SYNCHRONIZING'
+            SET @StopReason += N'Secondary NOT SYNCHRONIZING; ';
+    END;
+
+    IF @MinVolumeFreePct <= @StopLogVolumeFreeSpacePct OR @MinVolumeFreeMB <= @StopLogVolumeMinFreeMB
+        SET @StopReason += CONCAT(N'Volume chứa LDF sắp hết: Còn ', @MinVolumeFreePct, N'% (', @MinVolumeFreeMB, N' MB); ');
+
+    IF @LogUsedPct >= @StopLogUsedPct
+        SET @StopReason += CONCAT(N'File LDF đầy ', @LogUsedPct, N'% >= STOP ', @StopLogUsedPct, N'%; ');
+
+    IF @GroupDatabaseId IS NOT NULL
+    BEGIN
+        IF @MaxSendQueueMB >= @StopLogSendQueueMB
+            SET @StopReason += CONCAT(N'Send Queue ', @MaxSendQueueMB, N' MB >= STOP ', @StopLogSendQueueMB, N' MB [Node: ', @WorstSendQueueReplica, N']; ');
+        IF @MaxRedoQueueMB >= @StopRedoQueueMB
+            SET @StopReason += CONCAT(N'Redo Queue ', @MaxRedoQueueMB, N' MB >= STOP ', @StopRedoQueueMB, N' MB [Node: ', @WorstRedoQueueReplica, N']; ');
+    END;
+
+    -- 6.2. WARN CONDITIONS (Chỉ đánh giá nếu không dính STOP)
+    IF LEN(@StopReason) = 0
+    BEGIN
+        IF @GroupDatabaseId IS NOT NULL
+        BEGIN
+            IF @WorstSyncHealth IN (N'NOT_HEALTHY', N'PARTIALLY_HEALTHY')
+                SET @WarnReason += CONCAT(N'Sync Health = ', @WorstSyncHealth, N'; ');
+            IF @WorstSyncState = N'SYNCHRONIZING'
+                SET @WarnReason += N'Secondary đang SYNCHRONIZING; ';
+            IF @MaxSendQueueMB >= @WarnLogSendQueueMB
+                SET @WarnReason += CONCAT(N'Send Queue cảnh báo: ', @MaxSendQueueMB, N' MB [Node: ', @WorstSendQueueReplica, N']; ');
+            IF @MaxRedoQueueMB >= @WarnRedoQueueMB
+                SET @WarnReason += CONCAT(N'Redo Queue cảnh báo: ', @MaxRedoQueueMB, N' MB [Node: ', @WorstRedoQueueReplica, N']; ');
+        END;
+
+        IF @LogReuseWait = N'AVAILABILITY_REPLICA'
+            SET @WarnReason += N'Log truncation đang bị giữ bởi AVAILABILITY_REPLICA; ';
+
+        IF @MinVolumeFreePct <= @WarnLogVolumeFreeSpacePct OR @MinVolumeFreeMB <= @WarnLogVolumeMinFreeMB
+            SET @WarnReason += CONCAT(N'Volume LDF ở mức cảnh báo: Còn ', @MinVolumeFreePct, N'% (', @MinVolumeFreeMB, N' MB); ');
+
+        IF @LogUsedPct >= @WarnLogUsedPct
+            SET @WarnReason += CONCAT(N'Log Used ở mức cảnh báo: ', @LogUsedPct, N'%; ');
+    END;
+
+    ------------------------------------------------------------------------
+    -- 7. CHỐT VERDICT CUỐI CÙNG
+    ------------------------------------------------------------------------
+    IF LEN(@StopReason) > 0
+    BEGIN
+        SET @OverallVerdict = 'STOP';
+        SET @Reason = LEFT(N'STOP: ' + @StopReason, 1000);
+    END
+    ELSE IF LEN(@WarnReason) > 0
+    BEGIN
+        SET @OverallVerdict = 'WARN';
+        SET @Reason = LEFT(N'WARN: ' + @WarnReason, 1000);
+    END
+    ELSE
+    BEGIN
+        SET @OverallVerdict = 'ALLOW';
+        SET @Reason = N'AG Replicas, dung lượng Transaction Log và Volume lưu trữ hoàn toàn an toàn. Đủ điều kiện bảo trì.';
+    END;
+
+    ------------------------------------------------------------------------
+    -- 8. XUẤT THÔNG TIN: PRINT (JOB LOG) + RESULT SET (AUTOMATION CONTROLLER)
+    ------------------------------------------------------------------------
+    PRINT CONCAT(N'[AG MAINTENANCE GUARD] DB: ', @DatabaseName, 
+                 N' | Verdict: ', @OverallVerdict, 
+                 N' | LogUsed: ', @LogUsedPct, N'% (', CAST(@LogUsedMB AS INT), N' MB / ', CAST(@TotalLogMB AS INT), N' MB)',
+                 N' | FreeVol: ', @MinVolumeFreePct, N'% (', @MinVolumeFreeMB, N' MB)',
+                 N' | SendQ: ', @MaxSendQueueMB, N' MB (Worst: ', ISNULL(@WorstSendQueueReplica, N'-'), N')',
+                 N' | RedoQ: ', @MaxRedoQueueMB, N' MB (Worst: ', ISNULL(@WorstRedoQueueReplica, N'-'), N')',
+                 N' | Sync: ', ISNULL(@WorstSyncState, N'-'), N' (Health: ', ISNULL(@WorstSyncHealth, N'-'), N')',
+                 N' | Suspended: ', ISNULL(CAST(@WorstSuspended AS VARCHAR(5)), N'-'),
+                 N' | Reason: ', @Reason);
+
+ExitWithResultSet:
+    SELECT
+        @OverallVerdict          AS Verdict,
+        @Reason                  AS Reason,
+        @DatabaseName            AS DatabaseName,
+        @LogUsedPct              AS LogUsedPct,
+        @LogUsedMB               AS LogUsedMB,
+        @TotalLogMB              AS TotalLogMB,
+        @LogFreeMB               AS LogFreeMB,
+        @LogReuseWait            AS LogReuseWait,
+        @MinVolumeFreePct        AS VolumeFreePct,
+        @MinVolumeFreeMB         AS VolumeFreeMB,
+        @MaxSendQueueMB          AS MaxSendQueueMB,
+        @MaxRedoQueueMB          AS MaxRedoQueueMB,
+        @WorstSendQueueReplica   AS WorstSendQueueReplica,
+        @WorstRedoQueueReplica   AS WorstRedoQueueReplica,
+        @WorstSyncState          AS WorstSyncState,
+        @WorstSyncHealth         AS WorstSyncHealth,
+        @WorstConnectedState     AS WorstConnectedState,
+        @HasSynchronousSecondary AS HasSynchronousSecondary,
+        @WorstSuspended          AS WorstSuspended,
+        @WorstSuspendedReplica   AS WorstSuspendedReplica,
+        @SuspendReason           AS SuspendReason;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_AgMaintenanceGuard]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		nghianl.ts
+-- Create date: 160926
+-- Description:	
+-- 1. Bản chất: Là một chốt chặn bảo vệ hạ tầng (Safety Guard/Telemetry Engine). 
+-- Procedure này không thực hiện bảo trì, mà chỉ đóng vai trò "khám sức khỏe" cho Database và 
+-- cụm Always On trước khi cấp phép cho Rebuild/Reorganize Index.
+
+-- 2. Nguyên tắc cốt lõi (Fail-safe): Mặc định khởi tạo biến kết quả là STOP. Chỉ khi toàn bộ các bài kiểm tra hệ thống đều vượt qua 
+-- an toàn thì mới trả về ALLOW hoặc WARN.
+
+-- 3. Các chỉ số giám sát trực tiếp:
+	-- a. Vai trò Replica: Xác thực instance hiện tại bắt buộc phải là Primary Replica của 
+	-- database đó (sys.fn_hadr_is_primary_replica).
+
+	-- b. Không gian ổ đĩa Log (.ldf): 
+	-- Đọc dung lượng ổ cứng vật lý chứa file log (sys.dm_os_volume_stats). Nếu dung lượng trống <= 10% hoặc <= 10 GB -> Trả về 
+	-- STOP (chống tràn đĩa làm treo database).
+	-- c. Mức sử dụng file Log: Đo phần trăm đã dùng của log bên trong file (sys.dm_db_log_space_usage). 
+	-- Nếu >== 90% Trả về STOP.
+	-- d. Sức khỏe đồng bộ AG: Kiểm tra Secondary có bị DISCONNECTED, SUSPENDED hay NOT SYNCHRONIZING không. Nếu Secondary gặp sự cố, log trên Primary sẽ bị kẹt không thể 
+	-- truncate -> Ngắt ngay lập tức.
+	-- e. Hàng đợi AG (Queues): Đo kích thước Log Send Queue và Redo Queue  sang Secondary. Nếu hàng đợi dồn ứ quá lớn (vi phạm SLA RPO/RTO) -> Dừng bảo trì để 
+	-- hệ thống tiêu hóa hết dữ liệu.
+
+-- 4. Giá trị trả về (@OverallVerdict):
+	-- ALLOW: Hạ tầng lý tưởng, cấp phép chạy với toàn bộ tài nguyên (MaxDOP = 4).
+	-- WARN: Hệ thống có tải nhẹ hoặc trễ đồng bộ vừa phải, cấp phép chạy nhưng hạ tải CPU (MaxDOP = 2).
+	-- STOP: Có nguy cơ tràn đĩa hoặc rớt cụm AG, tuyệt đối không cho phép bảo trì và trả về lý do chi tiết (@Reason).
+-- =============================================
+CREATE   PROCEDURE [dbo].[usp_AgMaintenanceGuard]
+(
+    @DatabaseName                   sysname,
+
+    ------------------------------------------------------------------------
+    -- STOP thresholds
+    ------------------------------------------------------------------------
+    @StopLogUsedPct                 INT          = 90,
+    @StopLogVolumeFreeSpacePct      INT          = 10,
+    @StopLogVolumeMinFreeMB         BIGINT       = 10240,   -- 10 GB
+    @StopLogSendQueueMB             BIGINT       = 10240,   -- 10 GB
+    @StopRedoQueueMB                BIGINT       = 20480,   -- 20 GB
+
+    ------------------------------------------------------------------------
+    -- WARN thresholds
+    ------------------------------------------------------------------------
+    @WarnLogUsedPct                 INT          = 75,
+    @WarnLogVolumeFreeSpacePct      INT          = 20,
+    @WarnLogVolumeMinFreeMB         BIGINT       = 20480,   -- 20 GB
+    @WarnLogSendQueueMB             BIGINT       = 5120,    -- 5 GB
+    @WarnRedoQueueMB                BIGINT       = 10240,   -- 10 GB
+
+    ------------------------------------------------------------------------
+    -- Policy
+    ------------------------------------------------------------------------
+    @RequireSecondaryReplicas       BIT          = 1,
+
+    ------------------------------------------------------------------------
+    -- CIRCUIT BREAKER OUTPUT
+    ------------------------------------------------------------------------
+    @OverallVerdict                 VARCHAR(10)  OUTPUT,    -- ALLOW/WARN/STOP
+    @Reason                         NVARCHAR(1000) OUTPUT
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    ------------------------------------------------------------------------
+    -- 0. SAFE INITIALIZATION
+    ------------------------------------------------------------------------
+    SET @OverallVerdict = 'STOP';
+    SET @Reason         = N'Guard chưa hoàn tất kiểm tra.';
+
+    ------------------------------------------------------------------------
+    -- INTERNAL TELEMETRY
+    ------------------------------------------------------------------------
+    DECLARE
+        @DatabaseId                 INT,
+        @DatabaseState              NVARCHAR(60),
+        @GroupDatabaseId            UNIQUEIDENTIFIER,
+
+        @LogUsedPct                 DECIMAL(5,2),
+        @LogUsedMB                  DECIMAL(18,2),
+        @TotalLogMB                 DECIMAL(18,2),
+        @LogFreeMB                  DECIMAL(18,2),
+        @LogReuseWait               NVARCHAR(60),
+
+        @MinVolumeFreePct           DECIMAL(5,2),
+        @MinVolumeFreeMB            BIGINT,
+
+        @MaxSendQueueMB             BIGINT,
+        @MaxRedoQueueMB             BIGINT,
+
+        @WorstSyncState             NVARCHAR(60),
+        @WorstSyncHealth            NVARCHAR(60),
+        @WorstConnectedState        NVARCHAR(60),
+
+        @HasSynchronousSecondary    BIT,
+
+        @WorstSendQueueReplica      sysname,
+        @WorstRedoQueueReplica      sysname,
+
+        @WorstSuspended             BIT,
+        @WorstSuspendedReplica      sysname,
+        @SuspendReason              NVARCHAR(60),
+
+        @SqlDynamic                 NVARCHAR(MAX),
+
+        @StopReason                 NVARCHAR(MAX) = N'',
+        @WarnReason                 NVARCHAR(MAX) = N'',
+
+        -- Biến phụ dùng để log qua RAISERROR (tránh lỗi hàm/biểu thức bên trong RAISERROR)
+        @PrintMaxSendQueueMB        BIGINT,
+        @PrintMaxRedoQueueMB        BIGINT,
+        @PrintWorstSyncState        NVARCHAR(60),
+        @PrintWorstConnectedState   NVARCHAR(60),
+        @PrintWorstSuspended        INT;
+
+    ------------------------------------------------------------------------
+    -- 1. VALIDATE INPUT
+    ------------------------------------------------------------------------
+    IF NULLIF(LTRIM(RTRIM(@DatabaseName)), N'') IS NULL
+    BEGIN
+        SET @Reason = N'DatabaseName không được NULL hoặc rỗng.';
+        GOTO ExitGuard;
+    END;
+
+    IF @StopLogUsedPct NOT BETWEEN 1 AND 100
+       OR @WarnLogUsedPct NOT BETWEEN 0 AND 100
+       OR @StopLogVolumeFreeSpacePct NOT BETWEEN 0 AND 100
+       OR @WarnLogVolumeFreeSpacePct NOT BETWEEN 0 AND 100
+       OR @StopLogVolumeMinFreeMB < 0
+       OR @WarnLogVolumeMinFreeMB < 0
+       OR @StopLogSendQueueMB < 0
+       OR @WarnLogSendQueueMB < 0
+       OR @StopRedoQueueMB < 0
+       OR @WarnRedoQueueMB < 0
+       OR @WarnLogUsedPct >= @StopLogUsedPct
+       OR @WarnLogVolumeFreeSpacePct <= @StopLogVolumeFreeSpacePct
+       OR @WarnLogVolumeMinFreeMB <= @StopLogVolumeMinFreeMB
+       OR @WarnLogSendQueueMB >= @StopLogSendQueueMB
+       OR @WarnRedoQueueMB >= @StopRedoQueueMB
+    BEGIN
+        SET @Reason =
+            N'Tham số cấu hình ngưỡng không hợp lệ hoặc logic WARN/STOP bị sai.';
+        GOTO ExitGuard;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 2. DATABASE / PRIMARY VALIDATION
+    ------------------------------------------------------------------------
+    SELECT
+        @DatabaseId      = d.database_id,
+        @DatabaseState   = d.state_desc,
+        @GroupDatabaseId = d.group_database_id,
+        @LogReuseWait    = d.log_reuse_wait_desc
+    FROM sys.databases AS d
+    WHERE d.name = @DatabaseName;
+
+    IF @DatabaseId IS NULL
+    BEGIN
+        SET @Reason =
+            CONCAT(N'Database [', @DatabaseName, N'] không tồn tại.');
+        GOTO ExitGuard;
+    END;
+
+    IF @DatabaseState <> N'ONLINE'
+    BEGIN
+        SET @Reason =
+            CONCAT(
+                N'Database [', @DatabaseName,
+                N'] không ONLINE. State = ', @DatabaseState
+            );
+        GOTO ExitGuard;
+    END;
+
+    ------------------------------------------------------------------------
+    -- Nếu DB thuộc AG thì chỉ Primary mới được phép chạy maintenance.
+    ------------------------------------------------------------------------
+    IF @GroupDatabaseId IS NOT NULL
+    BEGIN
+        IF ISNULL(sys.fn_hadr_is_primary_replica(@DatabaseName), 0) <> 1
+        BEGIN
+            SET @Reason =
+                CONCAT(
+                    N'Instance hiện tại KHÔNG PHẢI Primary Replica của database [',
+                    @DatabaseName, N'].'
+                );
+            GOTO ExitGuard;
+        END;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 3. TRANSACTION LOG TELEMETRY
+    ------------------------------------------------------------------------
+    SET @SqlDynamic = N'
+        SELECT
+            @p_TotalLogMB =
+                CAST(total_log_size_in_bytes / 1048576.0 AS DECIMAL(18,2)),
+
+            @p_LogUsedMB =
+                CAST(used_log_space_in_bytes / 1048576.0 AS DECIMAL(18,2)),
+
+            @p_LogFreeMB =
+                CAST(
+                    (total_log_size_in_bytes - used_log_space_in_bytes)
+                    / 1048576.0
+                    AS DECIMAL(18,2)
+                ),
+
+            @p_LogUsedPct =
+                CAST(
+                    used_log_space_in_percent
+                    AS DECIMAL(5,2)
+                )
+        FROM ' + QUOTENAME(@DatabaseName) + N'.sys.dm_db_log_space_usage;';
+
+    BEGIN TRY
+        EXEC sys.sp_executesql
+            @SqlDynamic,
+            N'
+                @p_TotalLogMB DECIMAL(18,2) OUTPUT,
+                @p_LogUsedMB  DECIMAL(18,2) OUTPUT,
+                @p_LogFreeMB  DECIMAL(18,2) OUTPUT,
+                @p_LogUsedPct DECIMAL(5,2) OUTPUT
+            ',
+            @p_TotalLogMB = @TotalLogMB OUTPUT,
+            @p_LogUsedMB  = @LogUsedMB  OUTPUT,
+            @p_LogFreeMB  = @LogFreeMB  OUTPUT,
+            @p_LogUsedPct = @LogUsedPct OUTPUT;
+    END TRY
+    BEGIN CATCH
+        SET @Reason =
+            CONCAT(
+                N'Lỗi đọc Transaction Log của [',
+                @DatabaseName,
+                N']: ',
+                ERROR_MESSAGE()
+            );
+        GOTO ExitGuard;
+    END CATCH;
+
+    ------------------------------------------------------------------------
+    -- Fail-safe: Kiểm tra dữ liệu log
+    ------------------------------------------------------------------------
+    IF @TotalLogMB IS NULL
+       OR @LogUsedMB IS NULL
+       OR @LogFreeMB IS NULL
+       OR @LogUsedPct IS NULL
+    BEGIN
+        SET @Reason =
+            N'Không lấy được đầy đủ telemetry Transaction Log. Chuyển STOP an toàn.';
+        GOTO ExitGuard;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 4. VOLUME CHỨA LDF
+    ------------------------------------------------------------------------
+    BEGIN TRY
+        SELECT
+            @MinVolumeFreePct =
+                MIN(
+                    CAST(
+                        vs.available_bytes * 100.0
+                        / NULLIF(vs.total_bytes, 0)
+                        AS DECIMAL(5,2)
+                    )
+                ),
+
+            @MinVolumeFreeMB =
+                MIN(vs.available_bytes / 1048576)
+        FROM
+        (
+            SELECT DISTINCT
+                database_id,
+                file_id
+            FROM sys.master_files
+            WHERE database_id = @DatabaseId
+              AND type_desc = N'LOG'
+        ) AS mf
+        CROSS APPLY sys.dm_os_volume_stats(
+            mf.database_id,
+            mf.file_id
+        ) AS vs;
+    END TRY
+    BEGIN CATCH
+        SET @Reason =
+            CONCAT(
+                N'Không thể kiểm tra Volume chứa LDF: ',
+                ERROR_MESSAGE()
+            );
+        GOTO ExitGuard;
+    END CATCH;
+
+    ------------------------------------------------------------------------
+    -- Fail-safe: Kiểm tra volume
+    ------------------------------------------------------------------------
+    IF @MinVolumeFreePct IS NULL
+       OR @MinVolumeFreeMB IS NULL
+    BEGIN
+        SET @Reason =
+            N'Không xác định được dung lượng Volume chứa LDF. Chuyển STOP an toàn.';
+        GOTO ExitGuard;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 5. AG TELEMETRY
+    ------------------------------------------------------------------------
+    IF @GroupDatabaseId IS NULL
+    BEGIN
+        SET @MaxSendQueueMB          = 0;
+        SET @MaxRedoQueueMB          = 0;
+        SET @WorstSyncState          = N'NOT_IN_AG';
+        SET @WorstSyncHealth         = N'NOT_IN_AG';
+        SET @WorstConnectedState     = N'NOT_IN_AG';
+        SET @HasSynchronousSecondary = 0;
+        SET @WorstSuspended          = 0;
+        SET @SuspendReason           = N'NOT_IN_AG';
+    END
+    ELSE
+    BEGIN
+        ;WITH RemoteReplicas AS
+        (
+            SELECT
+                ar.replica_server_name,
+
+                CAST(
+                    drs.log_send_queue_size / 1024.0
+                    AS BIGINT
+                ) AS SendQueueMB,
+
+                CAST(
+                    drs.redo_queue_size / 1024.0
+                    AS BIGINT
+                ) AS RedoQueueMB,
+
+                ars.connected_state_desc,
+
+                drs.synchronization_state_desc,
+                drs.synchronization_health_desc,
+
+                ar.availability_mode_desc,
+
+                drs.is_suspended,
+                drs.suspend_reason_desc,
+
+                ROW_NUMBER() OVER
+                (
+                    ORDER BY
+                        drs.log_send_queue_size DESC,
+                        ar.replica_server_name ASC
+                ) AS RankSendQ,
+
+                ROW_NUMBER() OVER
+                (
+                    ORDER BY
+                        drs.redo_queue_size DESC,
+                        ar.replica_server_name ASC
+                ) AS RankRedoQ,
+
+                ROW_NUMBER() OVER
+                (
+                    ORDER BY
+                        drs.is_suspended DESC,
+                        drs.suspend_reason DESC,
+                        ar.replica_server_name ASC
+                ) AS RankSuspend
+
+            FROM sys.dm_hadr_database_replica_states AS drs
+
+            INNER JOIN sys.availability_replicas AS ar
+                ON ar.replica_id = drs.replica_id
+
+            LEFT JOIN sys.dm_hadr_availability_replica_states AS ars
+                ON ars.replica_id = drs.replica_id
+
+            WHERE drs.database_id = @DatabaseId
+              AND drs.is_local = 0
+        )
+        SELECT
+            @MaxSendQueueMB =
+                MAX(SendQueueMB),
+
+            @MaxRedoQueueMB =
+                MAX(RedoQueueMB),
+
+            @WorstConnectedState =
+                CASE MAX(
+                    CASE connected_state_desc
+                        WHEN N'DISCONNECTED' THEN 3
+                        WHEN N'UNKNOWN'      THEN 2
+                        WHEN N'CONNECTED'    THEN 1
+                        ELSE 0
+                    END
+                )
+                    WHEN 3 THEN N'DISCONNECTED'
+                    WHEN 2 THEN N'UNKNOWN'
+                    WHEN 1 THEN N'CONNECTED'
+                    ELSE N'UNKNOWN'
+                END,
+
+            @WorstSyncState =
+                CASE MAX(
+                    CASE synchronization_state_desc
+                        WHEN N'NOT SYNCHRONIZING' THEN 3
+                        WHEN N'SYNCHRONIZING'     THEN 2
+                        WHEN N'SYNCHRONIZED'      THEN 1
+                        ELSE 0
+                    END
+                )
+                    WHEN 3 THEN N'NOT SYNCHRONIZING'
+                    WHEN 2 THEN N'SYNCHRONIZING'
+                    WHEN 1 THEN N'SYNCHRONIZED'
+                    ELSE N'UNKNOWN'
+                END,
+
+            @WorstSyncHealth =
+                CASE MAX(
+                    CASE synchronization_health_desc
+                        WHEN N'NOT_HEALTHY'       THEN 3
+                        WHEN N'PARTIALLY_HEALTHY' THEN 2
+                        WHEN N'HEALTHY'           THEN 1
+                        ELSE 0
+                    END
+                )
+                    WHEN 3 THEN N'NOT_HEALTHY'
+                    WHEN 2 THEN N'PARTIALLY_HEALTHY'
+                    WHEN 1 THEN N'HEALTHY'
+                    ELSE N'UNKNOWN'
+                END,
+
+            @HasSynchronousSecondary =
+                ISNULL(
+                    MAX(
+                        CASE
+                            WHEN availability_mode_desc =
+                                 N'SYNCHRONOUS_COMMIT'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ),
+                    0
+                ),
+
+            @WorstSuspended =
+                ISNULL(
+                    MAX(CAST(is_suspended AS INT)),
+                    0
+                ),
+
+            @WorstSendQueueReplica =
+                MAX(
+                    CASE
+                        WHEN RankSendQ = 1
+                        THEN replica_server_name
+                    END
+                ),
+
+            @WorstRedoQueueReplica =
+                MAX(
+                    CASE
+                        WHEN RankRedoQ = 1
+                        THEN replica_server_name
+                    END
+                ),
+
+            @WorstSuspendedReplica =
+                MAX(
+                    CASE
+                        WHEN RankSuspend = 1
+                         AND is_suspended = 1
+                        THEN replica_server_name
+                    END
+                ),
+
+            @SuspendReason =
+                MAX(
+                    CASE
+                        WHEN RankSuspend = 1
+                         AND is_suspended = 1
+                        THEN suspend_reason_desc
+                    END
+                )
+
+        FROM RemoteReplicas;
+
+        --------------------------------------------------------------------
+        -- POLICY: Phải có Secondary hợp lệ.
+        ------------------------------------------------------------------------
+        IF @RequireSecondaryReplicas = 1
+        BEGIN
+            IF @WorstConnectedState IS NULL
+            BEGIN
+                SET @Reason =
+                    N'Không phát hiện Secondary Replica trong DMV AG.';
+                GOTO ExitGuard;
+            END;
+
+            IF @WorstConnectedState = N'UNKNOWN'
+            BEGIN
+                SET @Reason =
+                    N'Không thể xác định trạng thái kết nối của Secondary Replica.';
+                GOTO ExitGuard;
+            END;
+        END;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 6. VERDICT ENGINE
+    ------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------
+    -- 6.1 STOP CONDITIONS
+    ------------------------------------------------------------------------
+    IF @GroupDatabaseId IS NOT NULL
+    BEGIN
+        IF @WorstConnectedState IN
+           (N'DISCONNECTED', N'UNKNOWN')
+        BEGIN
+            SET @StopReason +=
+                CONCAT(
+                    N'Secondary [',
+                    @WorstConnectedState,
+                    N']; '
+                );
+        END;
+
+        IF @WorstSuspended = 1
+        BEGIN
+            SET @StopReason +=
+                CONCAT(
+                    N'Secondary SUSPENDED [Node: ',
+                    @WorstSuspendedReplica,
+                    N', Lý do: ',
+                    ISNULL(@SuspendReason, N'Không rõ'),
+                    N']; '
+                );
+        END;
+
+        IF @WorstSyncState = N'NOT SYNCHRONIZING'
+        BEGIN
+            SET @StopReason +=
+                N'Secondary NOT SYNCHRONIZING; ';
+        END;
+    END;
+
+    IF @MinVolumeFreePct <= @StopLogVolumeFreeSpacePct
+       OR @MinVolumeFreeMB <= @StopLogVolumeMinFreeMB
+    BEGIN
+        SET @StopReason +=
+            CONCAT(
+                N'Volume chứa LDF sắp hết: Còn ',
+                @MinVolumeFreePct,
+                N'% (',
+                @MinVolumeFreeMB,
+                N' MB); '
+            );
+    END;
+
+    IF @LogUsedPct >= @StopLogUsedPct
+    BEGIN
+        SET @StopReason +=
+            CONCAT(
+                N'File LDF đầy ',
+                @LogUsedPct,
+                N'% >= STOP ',
+                @StopLogUsedPct,
+                N'%; '
+            );
+    END;
+
+    IF @GroupDatabaseId IS NOT NULL
+    BEGIN
+        IF @MaxSendQueueMB >= @StopLogSendQueueMB
+        BEGIN
+            SET @StopReason +=
+                CONCAT(
+                    N'Send Queue ',
+                    @MaxSendQueueMB,
+                    N' MB >= STOP ',
+                    @StopLogSendQueueMB,
+                    N' MB [Node: ',
+                    @WorstSendQueueReplica,
+                    N']; '
+                );
+        END;
+
+        IF @MaxRedoQueueMB >= @StopRedoQueueMB
+        BEGIN
+            SET @StopReason +=
+                CONCAT(
+                    N'Redo Queue ',
+                    @MaxRedoQueueMB,
+                    N' MB >= STOP ',
+                    @StopRedoQueueMB,
+                    N' MB [Node: ',
+                    @WorstRedoQueueReplica,
+                    N']; '
+                );
+        END;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 6.2 WARN CONDITIONS
+    ------------------------------------------------------------------------
+    IF LEN(@StopReason) = 0
+    BEGIN
+        IF @GroupDatabaseId IS NOT NULL
+        BEGIN
+            IF @WorstSyncHealth IN
+               (N'NOT_HEALTHY', N'PARTIALLY_HEALTHY')
+            BEGIN
+                SET @WarnReason +=
+                    CONCAT(
+                        N'Sync Health = ',
+                        @WorstSyncHealth,
+                        N'; '
+                    );
+            END;
+
+            IF @WorstSyncState = N'SYNCHRONIZING'
+            BEGIN
+                SET @WarnReason +=
+                    N'Secondary đang SYNCHRONIZING; ';
+            END;
+
+            IF @MaxSendQueueMB >= @WarnLogSendQueueMB
+            BEGIN
+                SET @WarnReason +=
+                    CONCAT(
+                        N'Send Queue cảnh báo: ',
+                        @MaxSendQueueMB,
+                        N' MB [Node: ',
+                        @WorstSendQueueReplica,
+                        N']; '
+                    );
+            END;
+
+            IF @MaxRedoQueueMB >= @WarnRedoQueueMB
+            BEGIN
+                SET @WarnReason +=
+                    CONCAT(
+                        N'Redo Queue cảnh báo: ',
+                        @MaxRedoQueueMB,
+                        N' MB [Node: ',
+                        @WorstRedoQueueReplica,
+                        N']; '
+                    );
+            END;
+        END;
+
+        IF @LogReuseWait = N'AVAILABILITY_REPLICA'
+        BEGIN
+            SET @WarnReason +=
+                N'Log truncation đang bị giữ bởi AVAILABILITY_REPLICA; ';
+        END;
+
+        IF @MinVolumeFreePct <= @WarnLogVolumeFreeSpacePct
+           OR @MinVolumeFreeMB <= @WarnLogVolumeMinFreeMB
+        BEGIN
+            SET @WarnReason +=
+                CONCAT(
+                    N'Volume LDF ở mức cảnh báo: Còn ',
+                    @MinVolumeFreePct,
+                    N'% (',
+                    @MinVolumeFreeMB,
+                    N' MB); '
+                );
+        END;
+
+        IF @LogUsedPct >= @WarnLogUsedPct
+        BEGIN
+            SET @WarnReason +=
+                CONCAT(
+                    N'Log Used ở mức cảnh báo: ',
+                    @LogUsedPct,
+                    N'%; '
+                );
+        END;
+    END;
+
+    ------------------------------------------------------------------------
+    -- 7. FINAL VERDICT
+    ------------------------------------------------------------------------
+    IF LEN(@StopReason) > 0
+    BEGIN
+        SET @OverallVerdict = 'STOP';
+
+        SET @Reason =
+            LEFT(
+                N'STOP: ' + @StopReason,
+                1000
+            );
+    END
+    ELSE IF LEN(@WarnReason) > 0
+    BEGIN
+        SET @OverallVerdict = 'WARN';
+
+        SET @Reason =
+            LEFT(
+                N'WARN: ' + @WarnReason,
+                1000
+            );
+    END
+    ELSE
+    BEGIN
+        SET @OverallVerdict = 'ALLOW';
+
+        SET @Reason =
+            N'AG Replicas, Transaction Log và Volume lưu trữ an toàn. Đủ điều kiện bảo trì.';
+    END;
+
+    ------------------------------------------------------------------------
+    -- 8. CIRCUIT BREAKER LOG
+    ------------------------------------------------------------------------
+    DECLARE
+        @StrLogUsedPct              NVARCHAR(20) = FORMAT(@LogUsedPct, 'N2'),
+        @StrLogFreeMB               NVARCHAR(30) = FORMAT(@LogFreeMB, 'N2'),
+        @StrMinVolumeFreePct        NVARCHAR(20) = FORMAT(@MinVolumeFreePct, 'N2');
+
+    -- Gán trước vào biến đơn để an toàn cú pháp cho RAISERROR
+    SET @PrintMaxSendQueueMB      = ISNULL(@MaxSendQueueMB, 0);
+    SET @PrintMaxRedoQueueMB      = ISNULL(@MaxRedoQueueMB, 0);
+    SET @PrintWorstSyncState      = ISNULL(@WorstSyncState, N'-');
+    SET @PrintWorstConnectedState = ISNULL(@WorstConnectedState, N'-');
+    SET @PrintWorstSuspended      = ISNULL(@WorstSuspended, 0);
+
+    -- Dùng %s cho các biến số thập phân đã chuyển thành chuỗi
+    RAISERROR(
+        N'[AG MAINTENANCE GUARD] DB: %s | Verdict: %s | LogUsed: %s%% | LogFree: %s MB | VolumeFree: %s%% (%I64d MB) | SendQ: %I64d MB | RedoQ: %I64d MB | Sync: %s | Connected: %s | Suspended: %d | Reason: %s',
+        10,
+        1,
+        @DatabaseName,
+        @OverallVerdict,
+        @StrLogUsedPct,          -- Đã đổi sang %s
+        @StrLogFreeMB,           -- Đã đổi sang %s
+        @StrMinVolumeFreePct,    -- Đã đổi sang %s
+        @MinVolumeFreeMB,
+        @PrintMaxSendQueueMB,
+        @PrintMaxRedoQueueMB,
+        @PrintWorstSyncState,
+        @PrintWorstConnectedState,
+        @PrintWorstSuspended,
+        @Reason
+    ) WITH NOWAIT;
+
+    RETURN;
+
+    ------------------------------------------------------------------------
+    -- FAIL-SAFE EXIT
+    ------------------------------------------------------------------------
+ExitGuard:
+
+    RAISERROR(
+        N'[AG MAINTENANCE GUARD] DB: %s | Verdict: STOP | Reason: %s',
+        10,
+        1,
+        @DatabaseName,
+        @Reason
+    ) WITH NOWAIT;
+
+    RETURN;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_AgRebuildIndex]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[usp_AgRebuildIndex]
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Kiểm tra node hiện tại có phải Primary hay không
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM sys.databases d
+        WHERE d.group_database_id IS NOT NULL 
+          AND sys.fn_hadr_is_primary_replica(d.name) = 1
+    )
+    BEGIN
+        RAISERROR(N'[CIRCUIT BREAKER] Node hien tai khong phai Primary Replica. Ket thuc.', 10, 1) WITH NOWAIT;
+        RETURN;
+    END;
+
+    -- 2. Khai báo biến
+    DECLARE 
+        @BatchTime      DATETIME2(0) = SYSDATETIME(),
+        @CurrentDB      sysname,
+        @Verdict        VARCHAR(10),
+        @Reason         NVARCHAR(1000),
+        @DynamicMaxDOP  INT,
+        @MailErrText    NVARCHAR(4000),
+        @ErrText        NVARCHAR(MAX);
+
+    -- Lấy danh sách DB là Primary
+    DECLARE @CandidateDatabases TABLE (
+        DBName sysname PRIMARY KEY,
+        Evaluated BIT DEFAULT 0
+    );
+
+    INSERT INTO @CandidateDatabases (DBName)
+    SELECT d.name
+    FROM sys.databases d
+    WHERE d.group_database_id IS NOT NULL
+      AND sys.fn_hadr_is_primary_replica(d.name) = 1
+      AND d.state_desc = 'ONLINE'
+      AND d.is_read_only = 0;
+
+    -- 3. GIAI ĐOẠN 1: QUÉT GUARD VÀ GHI VÀO BẢNG LOG
+    WHILE EXISTS (SELECT 1 FROM @CandidateDatabases WHERE Evaluated = 0)
+    BEGIN
+        SELECT TOP (1) @CurrentDB = DBName
+        FROM @CandidateDatabases
+        WHERE Evaluated = 0
+        ORDER BY DBName;
+
+        EXEC dbo.usp_AgMaintenanceGuard
+            @DatabaseName   = @CurrentDB,
+            @OverallVerdict = @Verdict OUTPUT,
+            @Reason         = @Reason OUTPUT;
+
+        SET @DynamicMaxDOP = CASE WHEN @Verdict = 'WARN' THEN 2 ELSE 4 END;
+
+        -- Lưu kết quả vào bảng lịch sử (Chuẩn hóa ActionType = 'REBUILD')
+        INSERT INTO dbo.AgGuardHistory (CheckTime, ActionType, DatabaseName, Verdict, Reason, DynamicMaxDOP, Executed, ExecutionStatus)
+        VALUES (
+            @BatchTime, 
+            'REBUILD',
+            @CurrentDB, 
+            @Verdict, 
+            @Reason, 
+            @DynamicMaxDOP, 
+            0,
+            CASE WHEN @Verdict = 'STOP' THEN N'SKIPPED_STOP' ELSE N'PENDING' END
+        );
+
+        UPDATE @CandidateDatabases
+        SET Evaluated = 1
+        WHERE DBName = @CurrentDB;
+    END;
+
+    -- 4. GIAI ĐOẠN 2: CHỈ GỬI EMAIL NẾU TỒN TẠI DB BỊ STOP
+    IF EXISTS (
+        SELECT 1 
+        FROM dbo.AgGuardHistory 
+        WHERE CheckTime = @BatchTime 
+          AND ActionType = 'REBUILD'
+          AND Verdict = 'STOP'
+    )
+    BEGIN
+        DECLARE @XmlBody NVARCHAR(MAX), @HtmlTable NVARCHAR(MAX), @MailSubject NVARCHAR(255);
+
+        -- Tạo bảng HTML liệt kê các DB bị STOP
+        SET @XmlBody = CAST((
+            SELECT 
+                td = DatabaseName, '',
+                td = Verdict, '',
+                td = Reason, ''
+            FROM dbo.AgGuardHistory
+            WHERE CheckTime = @BatchTime 
+              AND ActionType = 'REBUILD'
+              AND Verdict = 'STOP'
+            ORDER BY DatabaseName
+            FOR XML PATH('tr'), ELEMENTS
+        ) AS NVARCHAR(MAX));
+
+        SET @HtmlTable = N'
+        <html>
+        <body>
+            <h3 style="color: #c0392b;">CẢNH BÁO: Database không đủ điều kiện Rebuild Index</h3>
+            <p>Hệ thống phát hiện các Database dưới đây trên Primary <b>' + @@SERVERNAME + N'</b> bị chặn bởi AG Guard:</p>
+            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse; font-family:Arial; font-size:13px;">
+                <tr style="background-color:#f2f2f2;">
+                    <th>Database</th>
+                    <th>Verdict</th>
+                    <th>Lý do từ chối (Reason)</th>
+                </tr>' 
+                + @XmlBody + 
+            N'</table>
+            <p><i>Vui lòng kiểm tra dung lượng ổ đĩa, log synchronization hoặc AG queue của secondary.</i></p>
+        </body>
+        </html>';
+
+        SET @MailSubject = N'[SQL ALERT] ' + @@SERVERNAME + N' - Phát hiện Database bị STOP Rebuild Index';
+
+        -- Gửi mail qua Database Mail
+        BEGIN TRY
+            EXEC msdb.dbo.sp_send_dbmail
+                @profile_name = 'DBA',        -- << Thay bằng Profile Mail của bạn
+                @recipients   = 'nghianl.ts@vietsov.com.vn;lamll.ts@vietsov.com.vn', -- << Thay bằng email nhận
+                @subject      = @MailSubject,
+                @body         = @HtmlTable,
+                @body_format  = 'HTML';
+
+            RAISERROR(N'>>> Da gui email canh bao DB STOP thanh cong cho Admin.', 10, 1) WITH NOWAIT;
+        END TRY
+        BEGIN CATCH
+            SET @MailErrText = ERROR_MESSAGE();
+            RAISERROR(N'>>> Khong the gui email canh bao: %s', 10, 1, @MailErrText) WITH NOWAIT;
+        END CATCH;
+    END;
+
+    -- 5. GIAI ĐOẠN 3: THỰC THI REBUILD (NẾU CÓ DB ĐƯỢC PHÉP CHẠY)
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM dbo.AgGuardHistory 
+        WHERE CheckTime = @BatchTime 
+          AND ActionType = 'REBUILD'
+          AND Verdict IN ('ALLOW', 'WARN')
+    )
+    BEGIN
+        RAISERROR(N'>>> Khong co Database nao du dieu kien (ALLOW/WARN). Ket thuc khong can Rebuild.', 10, 1) WITH NOWAIT;
+        RETURN;
+    END;
+
+    DECLARE 
+        @TargetDB       sysname,
+        @RunMaxDOP      INT,
+        @CurrentVerdict VARCHAR(10);
+
+    WHILE EXISTS (
+        SELECT 1 
+        FROM dbo.AgGuardHistory 
+        WHERE CheckTime = @BatchTime 
+          AND ActionType = 'REBUILD'
+          AND Verdict IN ('ALLOW', 'WARN') 
+          AND Executed = 0
+    )
+    BEGIN
+        SELECT TOP (1) 
+            @TargetDB       = DatabaseName,
+            @RunMaxDOP      = DynamicMaxDOP,
+            @CurrentVerdict = Verdict
+        FROM dbo.AgGuardHistory
+        WHERE CheckTime = @BatchTime 
+          AND ActionType = 'REBUILD'
+          AND Verdict IN ('ALLOW', 'WARN') 
+          AND Executed = 0
+        ORDER BY DatabaseName;
+
+        RAISERROR(N'--------------------------------------------------------------------------------', 10, 1) WITH NOWAIT;
+        RAISERROR(N'>>> [THUC THI] Rebuild DB: [%s] | MaxDOP: %d', 10, 1, @TargetDB, @RunMaxDOP) WITH NOWAIT;
+
+		-- Xác định phiên bản động
+		DECLARE @MajorVersion INT = (@@MICROSOFTVERSION / 0x01000000);
+		DECLARE @EngineEdition INT = CAST(SERVERPROPERTY('EngineEdition') AS INT); -- 3 = Enterprise
+
+		DECLARE 
+			@OptResumable VARCHAR(1) = 'N',
+			@OptLowPriorityDuration INT = NULL,
+			@OptLowPriorityAbort VARCHAR(10) = NULL;
+
+		-- 1. Resumable Online Index Rebuild chỉ hỗ trợ từ SQL 2017 Enterprise/Developer
+		IF @MajorVersion >= 14 AND @EngineEdition = 3
+		BEGIN
+			SET @OptResumable = 'Y';
+		END;
+
+		-- 2. Wait at Low Priority chỉ hỗ trợ từ Enterprise/Developer (2014+)
+		IF @EngineEdition = 3
+		BEGIN
+			SET @OptLowPriorityDuration = 5;
+			SET @OptLowPriorityAbort = 'SELF';
+		END;
+
+		-- Truyền các biến này vào EXECUTE IndexOptimize:
+		EXECUTE [master].[dbo].[IndexOptimize]
+			@Databases                       = @TargetDB,
+			@MinNumberOfPages                = 1000,
+			@FragmentationLow                = NULL,
+			@FragmentationMedium             = NULL,
+			@FragmentationLevel2             = 30,
+			@FragmentationHigh               = 'INDEX_REBUILD_ONLINE,INDEX_REBUILD_OFFLINE',
+			@MaxDOP                          = @RunMaxDOP,
+			@SortInTempdb                    = 'Y',
+			@WaitAtLowPriorityMaxDuration    = @OptLowPriorityDuration,
+			@WaitAtLowPriorityAbortAfterWait = @OptLowPriorityAbort,
+			@LockTimeout                     = 300,
+			@Resumable                       = @OptResumable,
+			@PartitionLevel                  = 'Y',
+			@UpdateStatistics                = 'ALL',
+			@OnlyModifiedStatistics          = 'Y',
+			@LogToTable                      = 'Y';
+
+        BEGIN TRY
+            EXECUTE [master].[dbo].[IndexOptimize]
+                @Databases                       = @TargetDB,
+                @MinNumberOfPages                = 1000,
+                @FragmentationLow                = NULL,
+                @FragmentationMedium             = NULL,
+                @FragmentationLevel2             = 30,
+                @FragmentationHigh               = 'INDEX_REBUILD_ONLINE,INDEX_REBUILD_OFFLINE',
+                @MaxDOP                          = @RunMaxDOP,
+                @SortInTempdb                    = 'Y',
+                @WaitAtLowPriorityMaxDuration    = 5,
+                @WaitAtLowPriorityAbortAfterWait = 'SELF',
+                @LockTimeout                     = 300,
+                @Resumable                       = 'Y',
+                @PartitionLevel                  = 'Y',
+                @UpdateStatistics                = 'ALL',
+                @OnlyModifiedStatistics          = 'Y',
+                @LogToTable                      = 'Y';
+
+            -- Cập nhật thành công vào bảng log
+            UPDATE dbo.AgGuardHistory
+            SET Executed        = 1,
+                ExecutionStatus = N'SUCCESS'
+            WHERE CheckTime = @BatchTime 
+              AND ActionType = 'REBUILD'
+              AND DatabaseName = @TargetDB;
+
+            RAISERROR(N'>>> [THANH CONG] DB: [%s]', 10, 1, @TargetDB) WITH NOWAIT;
+        END TRY
+        BEGIN CATCH
+            SET @ErrText = ERROR_MESSAGE();
+
+            -- Ghi nhận lỗi vào bảng log
+            UPDATE dbo.AgGuardHistory
+            SET Executed        = 1,
+                ExecutionStatus = N'FAILED',
+                ErrorMessage    = @ErrText
+            WHERE CheckTime = @BatchTime 
+              AND ActionType = 'REBUILD'
+              AND DatabaseName = @TargetDB;
+
+            RAISERROR(N'>>> [LOI REBUILD] DB: [%s]: %s', 10, 1, @TargetDB, @ErrText) WITH NOWAIT;
+        END CATCH;
+    END;
+
+    RAISERROR(N'================================================================================', 10, 1) WITH NOWAIT;
+    RAISERROR(N'[HOAN TAT TIEN TRINH REBUILD VA GHI LOG]', 10, 1) WITH NOWAIT;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_AgReorganizeIndex]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[usp_AgReorganizeIndex]
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. KIỂM TRA ROLE TỔNG THỂ: NODE HIỆN TẠI PHẢI LÀ PRIMARY CỦA ÍT NHẤT 1 DB
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM sys.databases d
+        WHERE d.group_database_id IS NOT NULL 
+          AND sys.fn_hadr_is_primary_replica(d.name) = 1
+    )
+    BEGIN
+        RAISERROR(N'[CIRCUIT BREAKER] Node hien tai khong phai Primary Replica. Ket thuc tien trinh Reorganize.', 10, 1) WITH NOWAIT;
+        RETURN;
+    END;
+
+    -- 2. KHAI BÁO BIẾN ĐIỀU KHIỂN
+    DECLARE 
+        @BatchTime      DATETIME2(0) = SYSDATETIME(),
+        @CurrentDB      sysname,
+        @Verdict        VARCHAR(10),
+        @Reason         NVARCHAR(1000),
+        @MailErrText    NVARCHAR(4000),
+        @ErrText        NVARCHAR(MAX);
+
+    -- Danh sách Database ứng viên (Phải là Primary, Online và Read/Write)
+    DECLARE @CandidateDatabases TABLE (
+        DBName sysname PRIMARY KEY,
+        Evaluated BIT DEFAULT 0
+    );
+
+    INSERT INTO @CandidateDatabases (DBName)
+    SELECT d.name
+    FROM sys.databases d
+    WHERE d.group_database_id IS NOT NULL
+      AND sys.fn_hadr_is_primary_replica(d.name) = 1
+      AND d.state_desc = 'ONLINE'
+      AND d.is_read_only = 0;
+
+    -- 3. GIAI ĐOẠN 1: QUÉT GUARD VÀ GHI LOG BAN ĐẦU
+    WHILE EXISTS (SELECT 1 FROM @CandidateDatabases WHERE Evaluated = 0)
+    BEGIN
+        SELECT TOP (1) @CurrentDB = DBName
+        FROM @CandidateDatabases
+        WHERE Evaluated = 0
+        ORDER BY DBName;
+
+        -- Gọi Guard kiểm tra sức khỏe AG, Queue và Disk Log
+        EXEC dbo.usp_AgMaintenanceGuard
+            @DatabaseName   = @CurrentDB,
+            @OverallVerdict = @Verdict OUTPUT,
+            @Reason         = @Reason OUTPUT;
+
+        -- Lưu vết đánh giá vào bảng
+        INSERT INTO dbo.AgGuardHistory (CheckTime, ActionType, DatabaseName, Verdict, Reason, DynamicMaxDOP, Executed, ExecutionStatus)
+        VALUES (
+            @BatchTime, 
+            'REORGANIZE',
+            @CurrentDB, 
+            @Verdict, 
+            @Reason, 
+            NULL, -- Reorganize là Single-Thread nên MaxDOP không áp dụng
+            0,
+            CASE WHEN @Verdict = 'STOP' THEN N'SKIPPED_STOP' ELSE N'PENDING' END
+        );
+
+        UPDATE @CandidateDatabases
+        SET Evaluated = 1
+        WHERE DBName = @CurrentDB;
+    END;
+
+    -- 4. GIAI ĐOẠN 2: CHỈ GỬI EMAIL NẾU CÓ DATABASE BỊ STOP
+    IF EXISTS (
+        SELECT 1 
+        FROM dbo.AgGuardHistory 
+        WHERE CheckTime = @BatchTime 
+          AND ActionType = 'REORGANIZE' 
+          AND Verdict = 'STOP'
+    )
+    BEGIN
+        DECLARE @XmlBody NVARCHAR(MAX), @HtmlTable NVARCHAR(MAX), @MailSubject NVARCHAR(255);
+
+        SET @XmlBody = CAST((
+            SELECT 
+                td = DatabaseName, '',
+                td = Verdict, '',
+                td = Reason, ''
+            FROM dbo.AgGuardHistory
+            WHERE CheckTime = @BatchTime 
+              AND ActionType = 'REORGANIZE' 
+              AND Verdict = 'STOP'
+            ORDER BY DatabaseName
+            FOR XML PATH('tr'), ELEMENTS
+        ) AS NVARCHAR(MAX));
+
+        SET @HtmlTable = N'
+        <html>
+        <body>
+            <h3 style="color: #d35400;">CẢNH BÁO: Bỏ qua Reorganize Index do AG Guard [STOP]</h3>
+            <p>Hệ thống bảo trì phát hiện các Database sau trên Primary <b>' + @@SERVERNAME + N'</b> không đủ điều kiện an toàn để Reorganize:</p>
+            <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; font-family:Segoe UI, Tahoma, Arial; font-size:13px;">
+                <tr style="background-color:#fcf3cf; color:#7d6608;">
+                    <th>Database Name</th>
+                    <th>Verdict</th>
+                    <th>Lý do từ chối (Guard Reason)</th>
+                </tr>' 
+                + @XmlBody + 
+            N'</table>
+            <p><i>Hệ thống tự động bỏ qua để tránh gây đầy ổ đĩa Log (LDF) hoặc nghẽn Redo Queue của Secondary.</i></p>
+        </body>
+        </html>';
+
+        SET @MailSubject = N'[SQL ALERT] ' + @@SERVERNAME + N' - Database bị STOP Reorganize Index';
+
+        BEGIN TRY
+            EXEC msdb.dbo.sp_send_dbmail
+                @profile_name = 'DBA',        -- << Điền Database Mail Profile của bạn
+                @recipients   = 'nghianl.ts@vietsov.com.vn;lamll.ts@vietsov.com.vn',  -- << Điền Email nhận cảnh báo
+                @subject      = @MailSubject,
+                @body         = @HtmlTable,
+                @body_format  = 'HTML';
+
+            RAISERROR(N'>>> Da gui email canh bao cac DB bi STOP cho Admin.', 10, 1) WITH NOWAIT;
+        END TRY
+        BEGIN CATCH
+            SET @MailErrText = ERROR_MESSAGE();
+            RAISERROR(N'>>> Khong the gui email canh bao: %s', 10, 1, @MailErrText) WITH NOWAIT;
+        END CATCH;
+    END;
+
+    -- 5. GIAI ĐOẠN 3: THỰC THI REORGANIZE CHO CÁC DB HỢP LỆ (ALLOW / WARN)
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM dbo.AgGuardHistory 
+        WHERE CheckTime = @BatchTime 
+          AND ActionType = 'REORGANIZE' 
+          AND Verdict IN ('ALLOW', 'WARN')
+    )
+    BEGIN
+        RAISERROR(N'>>> Khong co DB nao du dieu kien (ALLOW/WARN). Ket thuc tien trinh.', 10, 1) WITH NOWAIT;
+        RETURN;
+    END;
+
+    DECLARE 
+        @TargetDB sysname;
+
+    WHILE EXISTS (
+        SELECT 1 
+        FROM dbo.AgGuardHistory 
+        WHERE CheckTime = @BatchTime 
+          AND ActionType = 'REORGANIZE' 
+          AND Verdict IN ('ALLOW', 'WARN') 
+          AND Executed = 0
+    )
+    BEGIN
+        SELECT TOP (1) 
+            @TargetDB = DatabaseName
+        FROM dbo.AgGuardHistory
+        WHERE CheckTime = @BatchTime 
+          AND ActionType = 'REORGANIZE' 
+          AND Verdict IN ('ALLOW', 'WARN') 
+          AND Executed = 0
+        ORDER BY DatabaseName;
+
+        RAISERROR(N'--------------------------------------------------------------------------------', 10, 1) WITH NOWAIT;
+        RAISERROR(N'>>> [BAT DAU REORGANIZE] DB: [%s]', 10, 1, @TargetDB) WITH NOWAIT;
+
+        BEGIN TRY
+            -- Chạy Reorganize qua Ola Hallengren
+            EXECUTE [master].[dbo].[IndexOptimize]
+                @Databases              = @TargetDB,
+                @MinNumberOfPages       = 1000,
+                @FragmentationLow       = NULL,
+                @FragmentationMedium    = 'INDEX_REORGANIZE',
+                @FragmentationHigh      = 'INDEX_REORGANIZE',
+                @FragmentationLevel1    = 10,
+                @FragmentationLevel2    = 30,
+                @LockTimeout            = 300,
+                @UpdateStatistics       = 'ALL',
+                @OnlyModifiedStatistics = 'Y',
+                @LogToTable             = 'Y';
+
+            -- Cập nhật thành công vào bảng log
+            UPDATE dbo.AgGuardHistory
+            SET Executed        = 1,
+                ExecutionStatus = N'SUCCESS'
+            WHERE CheckTime = @BatchTime 
+              AND ActionType = 'REORGANIZE' 
+              AND DatabaseName = @TargetDB;
+
+            RAISERROR(N'>>> [HOAN TAT REORGANIZE] DB: [%s]', 10, 1, @TargetDB) WITH NOWAIT;
+        END TRY
+        BEGIN CATCH
+            SET @ErrText = ERROR_MESSAGE();
+
+            -- Ghi vết lỗi vào bảng log
+            UPDATE dbo.AgGuardHistory
+            SET Executed        = 1,
+                ExecutionStatus = N'FAILED',
+                ErrorMessage    = @ErrText
+            WHERE CheckTime = @BatchTime 
+              AND ActionType = 'REORGANIZE' 
+              AND DatabaseName = @TargetDB;
+
+            RAISERROR(N'>>> [LOI REORGANIZE] DB: [%s]: %s', 10, 1, @TargetDB, @ErrText) WITH NOWAIT;
+        END CATCH;
+    END;
+
+    RAISERROR(N'================================================================================', 10, 1) WITH NOWAIT;
+    RAISERROR(N'[HOAN TAT TOAN BO TIEN TRINH REORGANIZE]', 10, 1) WITH NOWAIT;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_AlertLogHealth]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[usp_AlertLogHealth]
+    @MailProfileName   sysname       = N'DBA',
+    @Recipients        varchar(max)  = 'nghianl.ts@vietsov.com.vn; lamll.ts@vietsov.com.vn',
+    @IncludeSystem     bit           = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Bảng tạm hứng kết quả (khớp chính xác 14 cột xuất ra từ sp_CheckLogHealth)
+    IF OBJECT_ID('tempdb..#AlertResults') IS NOT NULL DROP TABLE #AlertResults;
+    CREATE TABLE #AlertResults (
+        status_display       nvarchar(50),
+        database_name        sysname,
+        recovery_model       nvarchar(60),
+        log_file_count       int,
+        io_placement         nvarchar(50),
+        cur_growth           nvarchar(50),
+        rec_growth_mb        int,
+        total_vlf            int,
+        log_size_mb          int,
+        log_used_pct         decimal(6,2),
+        log_reuse_wait       nvarchar(60),
+        disk_status          nvarchar(256),
+        recommendation       nvarchar(max),
+        fix_script           nvarchar(max)
+    );
+
+    -- 2. Thực thi sp_CheckLogHealth chỉ lấy các DB có cảnh báo
+    INSERT INTO #AlertResults
+    EXEC [master].[dbo].[sp_CheckLogHealth] 
+        @IncludeSystem = @IncludeSystem, 
+        @OnlyActionRequired = 1;
+
+    -- 4. Nếu có cảnh báo thì tiến hành lưu Log và gửi Mail
+    IF EXISTS (SELECT 1 FROM #AlertResults)
+    BEGIN
+        -- Ghi log vào bảng lưu trữ
+        INSERT INTO [master].[dbo].[LogHealthAlerts] (
+            status_display, database_name, recovery_model,
+            log_files, io_placement, cur_growth, rec_growth_mb,
+            vlf_count, log_size_mb, used_pct, reuse_wait,
+            disk_status, recommendation, generated_fix_script
+        )
+        SELECT 
+            status_display, database_name, recovery_model,
+            log_file_count, io_placement, cur_growth, rec_growth_mb,
+            total_vlf, log_size_mb, log_used_pct, log_reuse_wait,
+            disk_status, recommendation, fix_script
+        FROM #AlertResults;
+
+        -- Render bảng dữ liệu HTML
+        DECLARE @tableRows nvarchar(max) = N'';
+        
+        SELECT @tableRows = @tableRows + 
+            N'<tr style="border-bottom: 1px solid #ddd;">' +
+            N'<td style="padding: 8px; font-weight: bold;">' + ISNULL(status_display, N'') + N'</td>' +
+            N'<td style="padding: 8px;">' + ISNULL(database_name, N'') + N'</td>' +
+            N'<td style="padding: 8px; text-align: center;">' + ISNULL(recovery_model, N'') + N'</td>' +
+            N'<td style="padding: 8px; text-align: right;">' + CAST(log_size_mb AS nvarchar(10)) + N' MB</td>' +
+            N'<td style="padding: 8px; text-align: right;">' + CAST(log_used_pct AS nvarchar(10)) + N'%</td>' +
+            N'<td style="padding: 8px; text-align: right;">' + CAST(total_vlf AS nvarchar(10)) + N'</td>' +
+            N'<td style="padding: 8px;">' + ISNULL(log_reuse_wait, N'') + N'</td>' +
+            N'<td style="padding: 8px;">' + ISNULL(disk_status, N'') + N'</td>' +
+            N'<td style="padding: 8px; color: #b30000;">' + ISNULL(recommendation, N'') + N'</td>' +
+            N'</tr>'
+        FROM #AlertResults
+        ORDER BY 
+            CASE 
+                WHEN status_display LIKE N'%EMERGENCY%' THEN 1 
+                WHEN status_display LIKE N'%CRITICAL%'  THEN 2 
+                WHEN status_display LIKE N'%BLOCKED%'   THEN 3 
+                ELSE 4 
+            END,
+            log_size_mb DESC;
+
+        -- Ghép body Email
+        DECLARE @bodyHtml nvarchar(max);
+        SET @bodyHtml = N'
+        <html>
+        <body style="font-family: Segoe UI, Arial, sans-serif; font-size: 13px; color: #333;">
+            <h2 style="color: #d9534f; margin-bottom: 5px;">Cảnh báo Sức khỏe Transaction Log - ' + @@SERVERNAME + N'</h2>
+            <p style="margin-top: 0px;">Phát hiện <b>' + CAST((SELECT COUNT(*) FROM #AlertResults) AS nvarchar(10)) + N' database</b> cần kiểm tra và xử lý:</p>
+            <table style="border-collapse: collapse; width: 100%; font-size: 12px; border: 1px solid #ccc;">
+                <tr style="background-color: #2c3e50; color: white;">
+                    <th style="padding: 8px; text-align: left;">Mức độ</th>
+                    <th style="padding: 8px; text-align: left;">Database</th>
+                    <th style="padding: 8px; text-align: center;">Model</th>
+                    <th style="padding: 8px; text-align: right;">Log Size</th>
+                    <th style="padding: 8px; text-align: right;">Used %</th>
+                    <th style="padding: 8px; text-align: right;">VLFs</th>
+                    <th style="padding: 8px; text-align: left;">Log Wait</th>
+                    <th style="padding: 8px; text-align: left;">Disk</th>
+                    <th style="padding: 8px; text-align: left;">Khuyến nghị</th>
+                </tr>' + @tableRows + N'
+            </table>
+            <p style="margin-top: 15px; font-size: 11px; color: #777;">
+                * Chi tiết câu lệnh Fix Script và lịch sử kiểm tra đã được lưu tại bảng <b>master.dbo.LogHealthAlerts</b> trên server.
+            </p>
+        </body>
+        </html>';
+
+        -- Gửi email cảnh báo
+        DECLARE @emailSubject nvarchar(255) = N'[DBA ALERT] ' + @@SERVERNAME + N' - Phát hiện sự cố Transaction Log';
+        
+        EXEC msdb.dbo.sp_send_dbmail
+            @profile_name = @MailProfileName,
+            @recipients   = @Recipients,
+            @subject      = @emailSubject,
+            @body         = @bodyHtml,
+            @body_format  = 'HTML';
+    END;
+
+    IF OBJECT_ID('tempdb..#AlertResults') IS NOT NULL DROP TABLE #AlertResults;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_CheckLogHealth]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+/*--=====================================
+ Author:		nghianl.ts
+ Create date: 160926
+ Description:	Là thủ tục sao lưu Transaction Log có khả năng tự điều chỉnh (Adaptive) và tự phối hợp 
+ giữa các node Primary – Secondary thông qua Application Lock (sp_getapplock / sp_releaseapplock).
+ Version: 2019
+ Description: 
+ - Kiểm tra nhanh tất cả các database người dùng (mặc định):
+		EXEC dbo.sp_CheckLogHealth;
+ - Chỉ hiển thị các DB đang có vấn đề cần xử lý gấp (Bỏ qua các DB đang Healthy/OK):
+		EXEC dbo.sp_CheckLogHealth @OnlyActionRequired = 1;
+ - Chỉ kiểm tra một database cụ thể:
+		EXEC dbo.sp_CheckLogHealth @DatabaseName = N'ERP_Production';
+ - Kiểm tra toàn bộ bao gồm cả các database hệ thống (master, msdb, model, tempdb):
+		EXEC dbo.sp_CheckLogHealth @IncludeSystem = 1;
+ -	Kết hợp kiểm tra nâng cao (Bao gồm system DB và chỉ lọc DB có cảnh báo):
+		EXEC dbo.sp_CheckLogHealth @IncludeSystem = 1,  @OnlyActionRequired = 1;
+--===================================== */
+CREATE   PROCEDURE [dbo].[usp_CheckLogHealth]
+    @DatabaseName       sysname       = NULL,      -- Chỉ định 1 DB hoặc NULL để quét toàn bộ
+    @Mode               varchar(10)   = 'REPORT',  -- 'REPORT' (Mặc định) hoặc 'EXECUTE'
+    @BackupDirectory    nvarchar(500) = N'D:\Backup\Tranlogs\', -- Đường dẫn backup bắt buộc khi EXECUTE
+    @IncludeSystem      bit           = 0,         -- 1: Bao gồm cả master, msdb, tempdb, model
+    @OnlyActionRequired bit           = 0          -- 1: Chỉ lọc các DB có cảnh báo cần xử lý
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET ARITHABORT ON;
+    SET ANSI_WARNINGS OFF;
+    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+    --------------------------------------------------------------------
+    -- 0. RÀO CHẮN AN TOÀN KHI DÙNG CHẾ ĐỘ 'EXECUTE'
+    --------------------------------------------------------------------
+    SET @Mode = UPPER(@Mode);
+    IF @Mode NOT IN ('REPORT', 'EXECUTE')
+    BEGIN
+        RAISERROR(N'Mode không hợp lệ. Vui lòng chọn ''REPORT'' hoặc ''EXECUTE''.', 16, 1);
+        RETURN;
+    END
+
+    IF @Mode = 'EXECUTE' AND @DatabaseName IS NULL
+    BEGIN
+        RAISERROR(N'BẢO VỆ AN TOÀN: Chế độ EXECUTE chỉ được phép chạy trên từng Database cụ thể (@DatabaseName không được để NULL).', 16, 1);
+        RETURN;
+    END
+
+    --------------------------------------------------------------------
+    -- 1. LỌC DANH SÁCH DATABASE HỢP LỆ VÀ ĐO DUNG LƯỢNG DATA/LOG
+    --------------------------------------------------------------------
+    IF OBJECT_ID('tempdb..#TargetDBs') IS NOT NULL DROP TABLE #TargetDBs;
+    CREATE TABLE #TargetDBs (
+        database_id   int PRIMARY KEY, 
+        database_name sysname,
+        data_size_mb  bigint,
+        primary_log   sysname,
+        log_count     int,
+        growth_mb     decimal(18,2),
+        is_pct_growth bit
+    );
+
+    INSERT INTO #TargetDBs (database_id, database_name, data_size_mb, primary_log, log_count, growth_mb, is_pct_growth)
+    SELECT 
+        d.database_id, 
+        d.name,
+        ISNULL(df.data_mb, 0),
+        lf.primary_log,
+        ISNULL(lf.log_count, 0),
+        ISNULL(lf.growth_mb, 0),
+        ISNULL(lf.is_pct_growth, 0)
+    FROM sys.databases d
+    OUTER APPLY (
+        SELECT SUM(CAST(size AS bigint) * 8 / 1024) AS data_mb
+        FROM sys.master_files 
+        WHERE database_id = d.database_id AND type = 0
+    ) df
+    OUTER APPLY (
+        SELECT 
+            MIN(name) AS primary_log,
+            COUNT(*)  AS log_count,
+            MAX(CASE WHEN is_percent_growth = 1 THEN 0 ELSE growth * 8.0 / 1024 END) AS growth_mb,
+            MAX(CAST(is_percent_growth AS int)) AS is_pct_growth
+        FROM sys.master_files 
+        WHERE database_id = d.database_id AND type = 1
+    ) lf
+    WHERE d.state = 0 -- ONLINE
+      AND d.source_database_id IS NULL -- Loại bỏ DB Snapshot
+      AND HAS_DBACCESS(d.name) = 1
+      AND (@DatabaseName IS NULL OR d.name = @DatabaseName)
+      AND (@IncludeSystem = 1 OR d.database_id > 4);
+
+    IF NOT EXISTS (SELECT 1 FROM #TargetDBs)
+    BEGIN
+        PRINT 'Không tìm thấy Database nào phù hợp với điều kiện lọc.';
+        RETURN;
+    END
+
+    --------------------------------------------------------------------
+    -- 2. ĐO LƯỜNG LOG DUNG LƯỢNG (DBCC SQLPERF TƯƠNG THÍCH MỌI PHIÊN BẢN)
+    --------------------------------------------------------------------
+    IF OBJECT_ID('tempdb..#LogSpace') IS NOT NULL DROP TABLE #LogSpace;
+    CREATE TABLE #LogSpace (
+        DBName sysname,
+        LogSizeMB decimal(18,2),
+        LogSpaceUsedPct decimal(6,2),
+        Status int
+    );
+    INSERT INTO #LogSpace (DBName, LogSizeMB, LogSpaceUsedPct, Status)
+    EXEC('DBCC SQLPERF(LOGSPACE) WITH NO_INFOMSGS;');
+
+    --------------------------------------------------------------------
+    -- 3. THU THẬP SỐ LƯỢNG & KÍCH THƯỚC TRUNG BÌNH CỦA VLF
+    --------------------------------------------------------------------
+    IF OBJECT_ID('tempdb..#VLF_Metrics') IS NOT NULL DROP TABLE #VLF_Metrics;
+    CREATE TABLE #VLF_Metrics (
+        database_id int PRIMARY KEY, 
+        total_vlf int, 
+        avg_vlf_mb decimal(18,2)
+    );
+
+    IF OBJECT_ID('tempdb..#VLF_Raw') IS NOT NULL DROP TABLE #VLF_Raw;
+    CREATE TABLE #VLF_Raw (
+        RecoveryUnitId int NULL,
+        FileId int,
+        FileSize bigint,
+        StartOffset bigint,
+        FSeqNo bigint,
+        Status int,
+        Parity int,
+        CreateLSN numeric(25,0)
+    );
+
+    DECLARE @CurrentDB sysname, @CurrentDBId int;
+    DECLARE @LogInfoSQL nvarchar(max);
+
+    DECLARE curVLF CURSOR LOCAL FAST_FORWARD FOR 
+        SELECT database_id, database_name FROM #TargetDBs;
+    OPEN curVLF;
+    FETCH NEXT FROM curVLF INTO @CurrentDBId, @CurrentDB;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        TRUNCATE TABLE #VLF_Raw;
+        SET @LogInfoSQL = N'DBCC LOGINFO(' + QUOTENAME(@CurrentDB, '''') + N') WITH NO_INFOMSGS;';
+
+        BEGIN TRY
+            INSERT INTO #VLF_Raw (RecoveryUnitId, FileId, FileSize, StartOffset, FSeqNo, Status, Parity, CreateLSN)
+            EXEC(@LogInfoSQL);
+        END TRY
+        BEGIN CATCH
+            BEGIN TRY
+                INSERT INTO #VLF_Raw (FileId, FileSize, StartOffset, FSeqNo, Status, Parity, CreateLSN)
+                EXEC(@LogInfoSQL);
+            END TRY
+            BEGIN CATCH
+                -- Skip if DB in transient state
+            END CATCH
+        END CATCH;
+
+        INSERT INTO #VLF_Metrics (database_id, total_vlf, avg_vlf_mb)
+        SELECT 
+            @CurrentDBId, 
+            COUNT(*), 
+            ISNULL(AVG(FileSize / 1048576.0), 0)
+        FROM #VLF_Raw;
+
+        FETCH NEXT FROM curVLF INTO @CurrentDBId, @CurrentDB;
+    END;
+    CLOSE curVLF;
+    DEALLOCATE curVLF;
+
+    --------------------------------------------------------------------
+    -- 4. BẢNG KẾT QUẢ VÀ TÍNH TOÁN TARGET ARCHITECTURE
+    --------------------------------------------------------------------
+    IF OBJECT_ID('tempdb..#LogEvaluation') IS NOT NULL DROP TABLE #LogEvaluation;
+    CREATE TABLE #LogEvaluation (
+        database_id          int PRIMARY KEY,
+        database_name        sysname,
+        recovery_model       nvarchar(60),
+        log_reuse_wait       nvarchar(60),
+        is_primary_replica   bit DEFAULT 1,
+        log_file_count       int,
+        primary_log_name     sysname,
+        data_size_mb         bigint,
+        log_size_mb          decimal(18,2),
+        log_used_mb          decimal(18,2),
+        log_used_pct         decimal(6,2),
+        total_vlf            int,
+        avg_vlf_mb           decimal(18,2),
+        volume_info          nvarchar(256),
+        volume_free_pct      decimal(5,2),
+        is_shared_drive      bit,
+        current_growth_mb    decimal(18,2),
+        is_percent_growth    bit,
+        target_log_size_mb   int,
+        target_growth_mb     int,
+        warning_level        varchar(25) DEFAULT 'OK',
+        status_display       nvarchar(50),
+        recommendation       nvarchar(max),
+        generated_fix_script nvarchar(max)
+    );
+
+    INSERT INTO #LogEvaluation (
+        database_id, database_name, recovery_model, log_reuse_wait,
+        is_primary_replica, log_file_count, primary_log_name, data_size_mb,
+        log_size_mb, log_used_mb, log_used_pct, total_vlf, avg_vlf_mb,
+        volume_info, volume_free_pct, is_shared_drive,
+        current_growth_mb, is_percent_growth, target_log_size_mb, target_growth_mb
+    )
+    SELECT 
+        t.database_id,
+        t.database_name,
+        d.recovery_model_desc,
+        d.log_reuse_wait_desc,
+        ISNULL(hadr.is_primary, 1),
+        t.log_count,
+        t.primary_log,
+        t.data_size_mb,
+        ISNULL(ls.LogSizeMB, 0),
+        CAST(ISNULL(ls.LogSizeMB * ls.LogSpaceUsedPct / 100.0, 0) AS decimal(18,2)),
+        ISNULL(ls.LogSpaceUsedPct, 0),
+        ISNULL(vlf.total_vlf, 0),
+        ISNULL(vlf.avg_vlf_mb, 0),
+        ISNULL(vs_log.volume_mount_point, 'N/A') + N' (' + CAST(ISNULL(vs_log.free_pct, 0) AS nvarchar(10)) + N'% Free)',
+        ISNULL(vs_log.free_pct, 0),
+        CASE WHEN placement.shared_count > 0 THEN 1 ELSE 0 END,
+        t.growth_mb,
+        t.is_pct_growth,
+        -- Kimberly Tripp Standard Target Sizing
+        CASE 
+            WHEN t.data_size_mb <= 10240  THEN 2048   -- Data <= 10GB  -> Log 2GB
+            WHEN t.data_size_mb <= 51200  THEN 4096   -- Data <= 50GB  -> Log 4GB
+            WHEN t.data_size_mb <= 204800 THEN 8192   -- Data <= 200GB -> Log 8GB
+            ELSE 16384                                -- Data > 200GB  -> Log 16GB
+        END,
+        -- Recommended File Growth Size
+        CASE 
+            WHEN t.data_size_mb <= 204800 THEN 1024  -- Dưới 200GB -> Growth 1GB (tạo 8 VLF 128MB)
+            ELSE 2048                                 -- Trên 200GB -> Growth 2GB (tạo 16 VLF 128MB)
+        END
+    FROM #TargetDBs t
+    JOIN sys.databases d ON d.database_id = t.database_id
+    LEFT JOIN #LogSpace ls ON ls.DBName = t.database_name
+    LEFT JOIN #VLF_Metrics vlf ON vlf.database_id = t.database_id
+    OUTER APPLY (
+        SELECT 
+            volume_mount_point = MAX(vs.volume_mount_point),
+            free_pct = MAX(CAST(100.0 * vs.available_bytes / NULLIF(vs.total_bytes, 0) AS decimal(5,2)))
+        FROM sys.master_files mf 
+        CROSS APPLY sys.dm_os_volume_stats(mf.database_id, mf.file_id) vs
+        WHERE mf.database_id = t.database_id AND mf.type = 1
+    ) vs_log
+    OUTER APPLY (
+        SELECT COUNT(*) AS shared_count
+        FROM sys.master_files mf_data
+        CROSS APPLY sys.dm_os_volume_stats(mf_data.database_id, mf_data.file_id) vs_data
+        WHERE mf_data.database_id = t.database_id
+          AND mf_data.type = 0
+          AND vs_data.volume_mount_point = vs_log.volume_mount_point
+    ) placement
+    OUTER APPLY (
+        SELECT CASE WHEN SERVERPROPERTY('IsHadrEnabled') = 1 
+                    THEN sys.fn_hadr_is_primary_replica(t.database_name) 
+                    ELSE 1 END AS is_primary
+    ) hadr;
+
+    --------------------------------------------------------------------
+    -- 5. PHÂN LOẠI NGUY CƠ & THIẾT LẬP LOGIC CẢNH BÁO
+    --------------------------------------------------------------------
+    UPDATE #LogEvaluation
+    SET warning_level = CASE 
+        WHEN volume_free_pct < 5.0                                    THEN 'EMERGENCY'
+        WHEN total_vlf > 10000                                        THEN 'CRITICAL_VLF'
+        WHEN log_reuse_wait NOT IN ('NOTHING', 'CHECKPOINT') 
+             AND log_used_pct > 75.0                                  THEN 'LOG_BLOCKED'
+        WHEN log_file_count > 1                                       THEN 'MULTI_LOG'
+        WHEN is_percent_growth = 1                                    THEN 'BAD_AUTOGROWTH'
+        WHEN total_vlf > 1000 AND avg_vlf_mb < 64.0                  THEN 'HIGH_VLF'
+        WHEN log_size_mb > (target_log_size_mb * 1.5) 
+             AND log_used_pct < 10.0                                  THEN 'OVERSIZED_LOG'
+        WHEN is_shared_drive = 1                                      THEN 'SHARED_DISK'
+        WHEN current_growth_mb < 256.0                                THEN 'WEAK_GROWTH'
+        ELSE 'OK'
+    END;
+
+    --------------------------------------------------------------------
+    -- 6. TẠO KHUYẾN NGHỊ VÀ GENERATED FIX SCRIPT (AN TOÀN TUYỆT ĐỐI)
+    --------------------------------------------------------------------
+    UPDATE #LogEvaluation
+		SET status_display = CASE warning_level
+            WHEN 'EMERGENCY'      THEN N'🚨 EMERGENCY'
+            WHEN 'CRITICAL_VLF'   THEN N'🔴 CRITICAL VLF'
+            WHEN 'LOG_BLOCKED'    THEN N'🚫 LOG BLOCKED'
+            WHEN 'MULTI_LOG'      THEN N'⚠️ MULTI LOG'
+            WHEN 'BAD_AUTOGROWTH' THEN N'🔴 BAD AUTOGROWTH'
+            WHEN 'HIGH_VLF'       THEN N'🟠 HIGH VLF'
+            WHEN 'OVERSIZED_LOG'  THEN N'🟠 OVERSIZED'
+            WHEN 'SHARED_DISK'    THEN N'🟡 SHARED DISK'
+            WHEN 'WEAK_GROWTH'    THEN N'🟡 WEAK GROWTH'
+            ELSE N'🟢 OK'
+        END,
+        
+        recommendation = CASE 
+            WHEN is_primary_replica = 0 THEN N'[SECONDARY REPLICA] Read-only mode. Không thực hiện can thiệp ghi tại node này.'
+            WHEN warning_level = 'EMERGENCY'      THEN N'Phân vùng Log còn trống dưới 5% (' + CAST(volume_free_pct AS nvarchar(10)) + N'%). Cần giải phóng khẩn cấp!'
+            WHEN warning_level = 'CRITICAL_VLF'   THEN N'VLF cực cao (' + CAST(total_vlf AS nvarchar(10)) + N' VLFs). Cần reset và định hình lại kích thước file log ngay.'
+            WHEN warning_level = 'LOG_BLOCKED'    THEN N'Log đầy ' + CAST(log_used_pct AS nvarchar(10)) + N'%, không thể truncate do log_reuse_wait: [' + log_reuse_wait + N'].'
+            WHEN warning_level = 'MULTI_LOG'      THEN N'Database có ' + CAST(log_file_count AS nvarchar(10)) + N' file log vật lý. SQL Server không ghi song song các file log.'
+            WHEN warning_level = 'BAD_AUTOGROWTH' THEN N'Đang cấu hình tăng trưởng theo %. Sẽ gây nghẽn I/O và lock khi dung lượng lớn.'
+            WHEN warning_level = 'HIGH_VLF'       THEN N'Phân mảnh VLF (' + CAST(total_vlf AS nvarchar(10)) + N' VLFs, TB ' + CAST(avg_vlf_mb AS nvarchar(10)) + N' MB/VLF).'
+            WHEN warning_level = 'OVERSIZED_LOG'  THEN N'Log (' + CAST(CAST(log_size_mb AS int) AS nvarchar(10)) + N' MB) lớn gấp 1.5 lần mức khuyến nghị (' + CAST(target_log_size_mb AS nvarchar(10)) + N' MB) nhưng dùng dưới 10%.'
+            WHEN warning_level = 'SHARED_DISK'    THEN N'Log và Data nằm chung 1 ổ đĩa vật lý. Dễ gây xung đột I/O giữa ngẫu nhiên và tuần tự.'
+            WHEN warning_level = 'WEAK_GROWTH'    THEN N'Growth rate hiện tại (' + CAST(CAST(current_growth_mb AS int) AS nvarchar(10)) + N' MB) quá nhỏ, dễ gây phân mảnh VLF tương lai.'
+            ELSE N'Transaction Log đạt trạng thái tối ưu.'
+        END,
+
+        -- Sinh Script sửa chữa tối ưu vòng lặp (Áp dụng Kimberly Tripp & Loop Shrink)
+        -- 6. TẠO KHUYẾN NGHỊ VÀ GENERATED FIX SCRIPT CHUẨN XÁC
+        generated_fix_script = CASE 
+            WHEN is_primary_replica = 0 THEN NULL
+
+            -- TRƯỜNG HỢP 1: LOG ĐANG ĐẦY BỊ NGHẼN (LOG_BLOCKED)
+            WHEN warning_level = 'LOG_BLOCKED' THEN
+                CASE 
+                    -- Nếu nghẽn do cần Backup Log
+                    WHEN log_reuse_wait = 'LOG_BACKUP' THEN
+                        N'-- [GIẢI CỨU LOG BỊ ĐẦY DO CHƯA BACKUP LOG]' + CHAR(13) + CHAR(10) +
+                        N'DECLARE @bkp_file nvarchar(500) = N''' + @BackupDirectory + database_name + N'_Urgent_'' + CONVERT(varchar, GETDATE(), 112) + N''_'' + REPLACE(CONVERT(varchar, GETDATE(), 108), '':'', '''') + N''.trn'';' + CHAR(13) + CHAR(10) +
+                        N'BACKUP LOG [' + database_name + N'] TO DISK = @bkp_file WITH COMPRESSION;' + CHAR(13) + CHAR(10) +
+                        N'-- Sau khi backup xong, kiểm tra lại sys.databases xem log_reuse_wait_desc đã về NOTHING/CHECKPOINT chưa.'
+                    
+                    -- Nếu nghẽn do Availability Group (Secondary chưa nhận kịp log)
+                    WHEN log_reuse_wait = 'AVAILABILITY_REPLICA' THEN
+                        N'-- [CẢNH BÁO] Log bị nghẽn do Secondary Replica chưa nhận/redo kịp log.' + CHAR(13) + CHAR(10) +
+                        N'-- Kiểm tra ngay trạng thái Send Queue / Redo Queue trên node Secondary:' + CHAR(13) + CHAR(10) +
+                        N'SELECT replica_server_name, log_send_queue_size, redo_queue_size, synchronization_health_desc ' + CHAR(13) + CHAR(10) +
+                        N'FROM sys.dm_hadr_database_replica_states drs JOIN sys.availability_replicas ar ON drs.replica_id = ar.replica_id ' + CHAR(13) + CHAR(10) +
+                        N'WHERE drs.database_id = DB_ID(N''' + database_name + N''');'
+
+                    -- Nếu nghẽn do giao dịch dài chưa commit
+                    WHEN log_reuse_wait = 'ACTIVE_TRANSACTION' THEN
+                        N'-- [CẢNH BÁO] Có Transaction chưa Commit giữ chặt Log.' + CHAR(13) + CHAR(10) +
+                        N'-- Tìm Transaction cũ nhất đang giữ LSN:' + CHAR(13) + CHAR(10) +
+                        N'DBCC OPENTRAN([' + database_name + N']);'
+
+                    ELSE
+                        N'-- Log không thể truncate do: [' + log_reuse_wait + N']. Vui lòng kiểm tra và giải quyết nguyên nhân gốc trước khi can thiệp.'
+                END
+
+            -- TRƯỜNG HỢP 2: BẢO TRÌ VLF / OVERSIZED / EMERGENCY
+            WHEN warning_level IN ('CRITICAL_VLF', 'HIGH_VLF', 'OVERSIZED_LOG', 'EMERGENCY') THEN
+                N'-- [QUY TRÌNH THU GỌN VÀ TÁI CẤU TRÚC LOG CHUẨN XÁC CHO ' + database_name + N']' + CHAR(13) + CHAR(10) +
+                N'DECLARE @i int = 0, @curr_size int;' + CHAR(13) + CHAR(10) +
+                N'DECLARE @ShrinkSQL nvarchar(max) = N''USE [' + database_name + N']; CHECKPOINT; DBCC SHRINKFILE (N''''' + primary_log_name + N''''', 1024) WITH NO_INFOMSGS;'';' + CHAR(13) + CHAR(10) +
+                (CASE WHEN recovery_model <> 'SIMPLE' 
+                      THEN N'DECLARE @bkp_file nvarchar(500) = N''' + @BackupDirectory + database_name + N'_LogDefrag_'' + CONVERT(varchar, GETDATE(), 112) + N''_'' + REPLACE(CONVERT(varchar, GETDATE(), 108), '':'', '''') + N''.trn'';' + CHAR(13) + CHAR(10)
+                      ELSE N'' END) +
+                N'WHILE @i < 5' + CHAR(13) + CHAR(10) +
+                N'BEGIN' + CHAR(13) + CHAR(10) +
+                N'    SET @i += 1;' + CHAR(13) + CHAR(10) +
+                N'    SELECT @curr_size = size * 8 / 1024 FROM [' + database_name + N'].sys.database_files WHERE name = N''' + primary_log_name + N''';' + CHAR(13) + CHAR(10) +
+                N'    IF @curr_size <= 1024 BREAK;' + CHAR(13) + CHAR(10) +
+                (CASE WHEN recovery_model = 'SIMPLE' 
+                      THEN N'    CHECKPOINT;' + CHAR(13) + CHAR(10)
+                      ELSE N'    BACKUP LOG [' + database_name + N'] TO DISK = @bkp_file WITH COMPRESSION, NOINIT;' + CHAR(13) + CHAR(10)
+                 END) +
+                N'    EXEC sp_executesql @ShrinkSQL;' + CHAR(13) + CHAR(10) +
+                N'    WAITFOR DELAY ''00:00:01'';' + CHAR(13) + CHAR(10) +
+                N'END;' + CHAR(13) + CHAR(10) +
+                N'-- Cập nhật Filegrowth chuẩn' + CHAR(13) + CHAR(10) +
+                N'ALTER DATABASE [' + database_name + N'] MODIFY FILE (NAME = N''' + primary_log_name + N''', MAXSIZE = UNLIMITED, FILEGROWTH = ' + CAST(target_growth_mb AS nvarchar(10)) + N'MB);' + CHAR(13) + CHAR(10)  +
+                N'-- Chỉ bung size nếu hiện tại nhỏ hơn Target (tránh lỗi 5039)' + CHAR(13) + CHAR(10) +
+                N'SELECT @curr_size = size * 8 / 1024 FROM [' + database_name + N'].sys.database_files WHERE name = N''' + primary_log_name + N''';' + CHAR(13) + CHAR(10) +
+                N'IF @curr_size < ' + CAST(target_log_size_mb AS nvarchar(10)) + CHAR(13) + CHAR(10) +
+                N'    ALTER DATABASE [' + database_name + N'] MODIFY FILE (NAME = N''' + primary_log_name + N''', SIZE = ' + CAST(target_log_size_mb AS nvarchar(10)) + N'MB);'
+
+            -- TRƯỜNG HỢP 3: CẤU HÌNH GROWTH SAI
+            WHEN warning_level IN ('BAD_AUTOGROWTH', 'WEAK_GROWTH') THEN
+                N'ALTER DATABASE [' + database_name + N'] MODIFY FILE (NAME = N''' + primary_log_name + N''', MAXSIZE = UNLIMITED, FILEGROWTH = ' + CAST(target_growth_mb AS nvarchar(10)) + N'MB);'
+
+            -- TRƯỜNG HỢP 4: NHIỀU FILE LOG
+            WHEN warning_level = 'MULTI_LOG' THEN
+                N'-- DB có nhiều file log. Sử dụng script sau để loại bỏ file phụ sau khi làm rỗng:' + CHAR(13) + CHAR(10) +
+                N'-- USE [' + database_name + N']; DBCC SHRINKFILE (N''<Secondary_Log_Name>'', EMPTYFILE);' + CHAR(13) + CHAR(10) +
+                N'-- ALTER DATABASE [' + database_name + N'] REMOVE FILE [<Secondary_Log_Name>];'
+
+            ELSE NULL
+        END;
+
+    --------------------------------------------------------------------
+    -- 7. CHẾ ĐỘ THỰC THI (EXECUTE MODE) - CHỈ CHẠY CHO 1 DB
+    --------------------------------------------------------------------
+    IF @Mode = 'EXECUTE'
+    BEGIN
+        DECLARE @ExecDB sysname, @ExecLog sysname, @ExecRecModel nvarchar(60), @ExecIsPrimary bit;
+        DECLARE @ExecTargetSize int, @ExecTargetGrowth int, @ExecReuseWait nvarchar(60);
+
+        SELECT TOP 1 
+            @ExecDB           = database_name,
+            @ExecLog          = primary_log_name,
+            @ExecRecModel     = recovery_model,
+            @ExecIsPrimary    = is_primary_replica,
+            @ExecTargetSize   = target_log_size_mb,
+            @ExecTargetGrowth = target_growth_mb,
+            @ExecReuseWait    = log_reuse_wait
+        FROM #LogEvaluation;
+
+        -- Kiểm tra điều kiện tiên quyết trước khi thực thi
+        IF @ExecIsPrimary = 0
+        BEGIN
+            RAISERROR(N'NGỪNG THỰC THI: Database [%s] là Secondary Replica. Lệnh chỉ được phép chạy trên Primary Replica.', 16, 1, @ExecDB);
+            RETURN;
+        END
+
+        IF @ExecReuseWait NOT IN ('NOTHING', 'CHECKPOINT')
+        BEGIN
+            RAISERROR(N'NGỪNG THỰC THI: Log đang bị khóa bởi chu trình [%s]. Vui lòng xử lý nguyên nhân này trước khi dọn dẹp log.', 16, 1, @ExecReuseWait);
+            RETURN;
+        END
+
+        PRINT '======================================================================';
+        PRINT '>>> BẮT ĐẦU QUY TRÌNH BẢO TRÌ & TÁI CẤU TRÚC LOG CHO: ' + @ExecDB;
+        PRINT '>>> File Log: ' + @ExecLog + ' | Target Size: ' + CAST(@ExecTargetSize AS varchar) + ' MB';
+        PRINT '======================================================================';
+
+        -- Đảm bảo có dấu gạch chéo cuối folder backup
+        IF RIGHT(@BackupDirectory, 1) <> '\' SET @BackupDirectory = @BackupDirectory + '\';
+        DECLARE @BackupFilePath nvarchar(512) = @BackupDirectory + N'LOG_MAINT_' + @ExecDB + N'_' + CONVERT(varchar, GETDATE(), 112) + N'_' + REPLACE(CONVERT(varchar, GETDATE(), 108), ':', '') + N'.trn';
+
+        -- VÒNG LẶP SHRINK FILE TRÁNH ACTIVE VLF (TỐI ĐA 5 LẦN)
+        DECLARE @LoopCount int = 0, @CurrentLogSize int;
+        WHILE @LoopCount < 5
+        BEGIN
+            SET @LoopCount += 1;
+            
+            DECLARE @GetSizeSQL nvarchar(max) = N'SELECT @s = (size * 8 / 1024) FROM [' + @ExecDB + N'].sys.database_files WHERE name = @lf;';
+            EXEC sp_executesql @GetSizeSQL, N'@s int OUTPUT, @lf sysname', @s = @CurrentLogSize OUTPUT, @lf = @ExecLog;
+
+            IF @CurrentLogSize <= 1024
+            BEGIN
+                PRINT '    [Lần lặp ' + CAST(@LoopCount AS varchar) + '] Dung lượng đạt mục tiêu tối thiểu (' + CAST(@CurrentLogSize AS varchar) + ' MB).';
+                BREAK;
+            END
+
+            PRINT '    [Lần lặp ' + CAST(@LoopCount AS varchar) + '] Log hiện tại: ' + CAST(@CurrentLogSize AS varchar) + ' MB. Đang giải phóng con trỏ Log...';
+
+            IF @ExecRecModel <> 'SIMPLE'
+            BEGIN
+                DECLARE @BkpSQL nvarchar(max) = N'BACKUP LOG [' + @ExecDB + N'] TO DISK = @bp WITH COMPRESSION, NOINIT;';
+                EXEC sp_executesql @BkpSQL, N'@bp nvarchar(512)', @bp = @BackupFilePath;
+            END
+
+            DECLARE @ShrinkSQL nvarchar(max) = N'USE [' + @ExecDB + N']; CHECKPOINT; DBCC SHRINKFILE (@lf, 1024) WITH NO_INFOMSGS;';
+            EXEC sp_executesql @ShrinkSQL, N'@lf sysname', @lf = @ExecLog;
+
+            WAITFOR DELAY '00:00:01';
+        END;
+
+        -- CẤU HÌNH TĂNG TRƯỞNG VÀ RESIZE MỤC TIÊU AN TOÀN THEO CHUNKS ĐỂ TRÁNH I/O STALLS
+        PRINT '>>> Đang thiết lập cấu hình Filegrowth: ' + CAST(@ExecTargetGrowth AS varchar) + ' MB...';
+        DECLARE @GrowthSQL nvarchar(max) = N'ALTER DATABASE [' + @ExecDB + N'] MODIFY FILE (NAME = N''' + @ExecLog + N''', FILEGROWTH = ' + CAST(@ExecTargetGrowth AS varchar) + N'MB);';
+        EXEC sp_executesql @GrowthSQL;
+
+        PRINT '>>> Đang tăng kích thước Log đạt Target: ' + CAST(@ExecTargetSize AS varchar) + ' MB...';
+        DECLARE @ResizeStep int = @CurrentLogSize;
+        IF @ResizeStep < 1024 SET @ResizeStep = 1024;
+
+        WHILE @ResizeStep < @ExecTargetSize
+        BEGIN
+            -- Tăng tối đa mỗi lần 4096MB để tránh zero-out I/O lock
+            SET @ResizeStep = @ResizeStep + 4096;
+            IF @ResizeStep > @ExecTargetSize SET @ResizeStep = @ExecTargetSize;
+
+            DECLARE @StepResizeSQL nvarchar(max) = N'ALTER DATABASE [' + @ExecDB + N'] MODIFY FILE (NAME = N''' + @ExecLog + N''', SIZE = ' + CAST(@ResizeStep AS varchar) + N'MB);';
+            EXEC sp_executesql @StepResizeSQL;
+            PRINT '    -> Đã mở rộng log lên: ' + CAST(@ResizeStep AS varchar) + ' MB';
+        END;
+
+        PRINT '======================================================================';
+        PRINT '>>> HOÀN TẤT THỰC THI CHO: ' + @ExecDB;
+        PRINT '======================================================================';
+    END
+
+    --------------------------------------------------------------------
+    -- 8. XUẤT KẾT QUẢ DẠNG GRID (KHI CHẠY REPORT HOẶC TỔNG KẾT EXECUTE)
+    --------------------------------------------------------------------
+    SELECT 
+        status_display                                                  AS [Status],
+        database_name                                                   AS [DB],
+        recovery_model                                                  AS [Recovery_Model],
+        log_file_count                                                  AS [Log_Files],
+        CASE WHEN is_shared_drive = 1 THEN N'SHARED (Bad)' 
+             ELSE N'SEPARATED (Good)' END                               AS [I/O_Placement],
+        CASE WHEN is_percent_growth = 1 THEN N'PERCENT' 
+             ELSE CAST(CAST(current_growth_mb AS int) AS nvarchar(10)) + N' MB' END AS [Cur_Growth],
+        CAST(target_growth_mb AS int)                                   AS [Rec_Growth_MB],
+        total_vlf                                                       AS [VLF_Count],
+        CAST(log_size_mb AS int)                                        AS [Log_Size_MB],
+        target_log_size_mb                                              AS [Target_Log_MB],
+        log_used_pct                                                    AS [Used_%],
+        log_reuse_wait                                                  AS [Reuse_Wait],
+        volume_info                                                     AS [Disk_Status],
+        recommendation                                                  AS [Recommendation],
+        generated_fix_script                                            AS [Generated_Fix_Script]
+    FROM #LogEvaluation
+    WHERE (@OnlyActionRequired = 0 OR warning_level <> 'OK')
+    ORDER BY 
+        CASE warning_level 
+            WHEN 'EMERGENCY'      THEN 1
+            WHEN 'CRITICAL_VLF'   THEN 2
+            WHEN 'LOG_BLOCKED'    THEN 3
+            WHEN 'MULTI_LOG'      THEN 4
+            WHEN 'BAD_AUTOGROWTH' THEN 5
+            WHEN 'HIGH_VLF'       THEN 6
+            WHEN 'OVERSIZED_LOG'  THEN 7
+            WHEN 'SHARED_DISK'    THEN 8
+            WHEN 'WEAK_GROWTH'    THEN 9
+            ELSE 99 
+        END,
+        log_size_mb DESC;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_ClearCommandLog]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		nghianl.ts
+-- Create date: 160926
+-- Description:	clear old Ola Ola Hallengren CommandLog
+-- =============================================
+CREATE PROCEDURE [dbo].[usp_ClearCommandLog] 
+	@RetentionDays int
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @RowsAffected INT = 1;
+	DECLARE @CutoffDate DATETIME = DATEADD(DAY, -@RetentionDays, GETDATE());
+
+	-- Xóa theo từng batch 5.000 dòng để tránh lock bảng và nghẽn log
+	WHILE @RowsAffected > 0
+	BEGIN
+		DELETE TOP (5000)
+		FROM [master].[dbo].[CommandLog]
+		WHERE StartTime < @CutoffDate;
+
+		SET @RowsAffected = @@ROWCOUNT;
+    
+		-- Nghỉ ngắn 50ms giữa các batch để nhường I/O
+		WAITFOR DELAY '00:00:00.050';
+END
+END
+GO
+/****** Object:  StoredProcedure [dbo].[usp_CollectDeadlockHistory]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[usp_CollectDeadlockHistory]
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        EXEC dbo.sp_BlitzLock 
+            @OutputDatabaseName = 'DbaMonitor',
+            @OutputSchemaName = 'dbo',
+            @OutputTableName = 'BlitzLockHistory';
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_CollectDeadlockHistory', 'sp_BlitzLock', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_CollectSnapPerformance]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[usp_CollectSnapPerformance]
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @Now DATETIME2(0) = SYSDATETIME();
+
+    -- 1. Gọi sp_BlitzFirst với @Seconds = 0 (Snapshot tức thời, không delay sampling)
+    BEGIN TRY
+        EXEC dbo.sp_BlitzFirst
+            @Seconds = 0,
+            @OutputDatabaseName = 'DbaMonitor',
+            @OutputSchemaName = 'dbo',
+            @OutputTableName = 'BlitzFirst',
+            @OutputTableNameFileStats = 'BlitzFirst_FileStats',
+            @OutputTableNamePerfmonStats = 'BlitzFirst_PerfmonStats',
+            @OutputTableNameWaitStats = 'BlitzFirst_WaitStats',
+            @OutputType = 'NONE';
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_CollectSnapPerformance', 'sp_BlitzFirst', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 2. Chụp Process CPU (SQL) vs Host Idle CPU qua Ring Buffer
+    BEGIN TRY
+        DECLARE @CpuSql TINYINT = 0, @CpuIdle TINYINT = 0;
+        
+        SELECT TOP(1)
+            @CpuSql = record.value('(./Record/SchedulerMonitorEvent/SystemHealth/ProcessUtilization)[1]', 'TINYINT'),
+            @CpuIdle = record.value('(./Record/SchedulerMonitorEvent/SystemHealth/SystemIdle)[1]', 'TINYINT')
+        FROM (
+            SELECT CAST(record AS XML) AS record 
+            FROM sys.dm_os_ring_buffers 
+            WHERE ring_buffer_type = N'RING_BUFFER_SCHEDULER_MONITOR' 
+              AND record LIKE '%<SystemHealth>%'
+        ) AS x
+        ORDER BY record.value('(./Record/@id)[1]', 'BIGINT') DESC;
+
+        -- 3. Chụp PLE trung bình Multi-NUMA, Memory Grants Pending, Runnable Tasks
+        DECLARE @AvgPLE INT = 0, @MemPending INT = 0, @RunnableTasks INT = 0;
+
+        SELECT @AvgPLE = ISNULL(AVG(cntr_value), 0)
+        FROM sys.dm_os_performance_counters 
+        WHERE counter_name = 'Page life expectancy' 
+          AND object_name LIKE '%Buffer Node%';
+
+        SELECT @MemPending = ISNULL(cntr_value, 0)
+        FROM sys.dm_os_performance_counters 
+        WHERE counter_name = 'Memory Grants Pending';
+
+        SELECT @RunnableTasks = ISNULL(SUM(runnable_tasks_count), 0)
+        FROM sys.dm_os_schedulers 
+        WHERE status = 'VISIBLE ONLINE';
+
+        INSERT INTO dbo.PerformanceSnapHistory 
+            (SnapTime, CpuSqlPercent, CpuIdlePercent, PageLifeExpectancy, MemoryGrantsPending, RunnableTasksCount)
+        VALUES 
+            (@Now, ISNULL(@CpuSql, 0), ISNULL(@CpuIdle, 0), @AvgPLE, @MemPending, @RunnableTasks);
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_CollectSnapPerformance', 'RingBuffer_Perfmon', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 4. Chụp vết File I/O Stats tích lũy từng file dữ liệu
+    BEGIN TRY
+        INSERT INTO dbo.FileIOStatsSnapshot
+            (SnapTime, DatabaseID, FileID, DatabaseName, LogicalFileName, PhysicalName, 
+             NumOfReads, IoStallReadMs, NumOfWrites, IoStallWriteMs, SizeOnDiskMB)
+        SELECT 
+            @Now,
+            fs.database_id,
+            fs.file_id,
+            DB_NAME(fs.database_id),
+            mf.name,
+            mf.physical_name,
+            fs.num_of_reads,
+            fs.io_stall_read_ms,
+            fs.num_of_writes,
+            fs.io_stall_write_ms,
+            CAST((fs.size_on_disk_bytes / 1048576.0) AS DECIMAL(18,2))
+        FROM sys.dm_io_virtual_file_stats(NULL, NULL) fs
+        INNER JOIN sys.master_files mf 
+            ON fs.database_id = mf.database_id AND fs.file_id = mf.file_id;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_CollectSnapPerformance', 'FileIOStatsSnapshot', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_DailyStorageAndMaintenance]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[usp_DailyStorageAndMaintenance]
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @Today DATE = CAST(SYSDATETIME() AS DATE);
+    DECLARE @PurgeMetricDate DATETIME2(0) = DATEADD(DAY, -90, SYSDATETIME());
+    DECLARE @PurgeAuditDate DATE = DATEADD(YEAR, -2, CAST(SYSDATETIME() AS DATE));
+    DECLARE @PurgeStorageDate DATE = DATEADD(YEAR, -3, CAST(SYSDATETIME() AS DATE)); -- Giữ baseline 3 năm
+    DECLARE @PurgeAuditDateTime DATETIME2(0) = CAST(@PurgeAuditDate AS DATETIME2(0));
+    DECLARE @RowsDeleted INT = 1;
+
+    -- 1. Lưu vết dung lượng Volume (Có kiểm tra trùng lặp)
+    BEGIN TRY
+        INSERT INTO dbo.StorageVolumeBaseline (SnapDate, VolumeMountPoint, TotalSpaceGB, AvailableSpaceGB)
+        SELECT DISTINCT
+            @Today,
+            vs.volume_mount_point,
+            CAST(vs.total_bytes / 1073741824.0 AS DECIMAL(18,2)),
+            CAST(vs.available_bytes / 1073741824.0 AS DECIMAL(18,2))
+        FROM sys.master_files mf
+        CROSS APPLY sys.dm_os_volume_stats(mf.database_id, mf.file_id) vs
+        WHERE NOT EXISTS (
+            SELECT 1 FROM dbo.StorageVolumeBaseline b 
+            WHERE b.SnapDate = @Today AND b.VolumeMountPoint = vs.volume_mount_point
+        );
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'StorageVolumeBaseline', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 2. Lưu kích thước Database bằng CTE chuẩn xác (Tránh lỗi GROUP BY + WHERE NOT EXISTS)
+    BEGIN TRY
+        ;WITH DbSizes AS (
+            SELECT 
+                DB_NAME(database_id) AS DatabaseName,
+                SUM(CASE WHEN type = 0 THEN CAST(size * 8.0 / 1024.0 AS DECIMAL(18,2)) ELSE 0 END) AS DataFileMB,
+                SUM(CASE WHEN type = 1 THEN CAST(size * 8.0 / 1024.0 AS DECIMAL(18,2)) ELSE 0 END) AS LogFileMB
+            FROM sys.master_files
+            GROUP BY database_id
+        )
+        INSERT INTO dbo.StorageDatabaseBaseline (SnapDate, DatabaseName, DataFileMB, LogFileMB)
+        SELECT @Today, d.DatabaseName, d.DataFileMB, d.LogFileMB
+        FROM DbSizes d
+        WHERE NOT EXISTS (
+            SELECT 1 FROM dbo.StorageDatabaseBaseline sdb
+            WHERE sdb.SnapDate = @Today AND sdb.DatabaseName = d.DatabaseName
+        );
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'StorageDatabaseBaseline', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 3. Batch Purge các bảng metric tần suất cao (Giữ 90 ngày)
+    BEGIN TRY
+        SET @RowsDeleted = 1;
+        WHILE (@RowsDeleted > 0)
+        BEGIN
+            DELETE TOP (10000) FROM dbo.PerformanceSnapHistory WHERE SnapTime < @PurgeMetricDate;
+            SET @RowsDeleted = @@ROWCOUNT;
+            IF @RowsDeleted > 0 WAITFOR DELAY '00:00:01';
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'Purge_PerformanceSnapHistory', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    BEGIN TRY
+        SET @RowsDeleted = 1;
+        WHILE (@RowsDeleted > 0)
+        BEGIN
+            DELETE TOP (10000) FROM dbo.FileIOStatsSnapshot WHERE SnapTime < @PurgeMetricDate;
+            SET @RowsDeleted = @@ROWCOUNT;
+            IF @RowsDeleted > 0 WAITFOR DELAY '00:00:01';
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'Purge_FileIOStatsSnapshot', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 4. Batch Purge các bảng output của FRK (Giữ 90 ngày)
+    BEGIN TRY
+        IF OBJECT_ID('dbo.BlitzFirst_WaitStats', 'U') IS NOT NULL
+        BEGIN
+            SET @RowsDeleted = 1;
+            WHILE (@RowsDeleted > 0)
+            BEGIN
+                DELETE TOP (10000) FROM dbo.BlitzFirst_WaitStats WHERE CheckDate < @PurgeMetricDate;
+                SET @RowsDeleted = @@ROWCOUNT;
+                IF @RowsDeleted > 0 WAITFOR DELAY '00:00:01';
+            END;
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'Purge_BlitzFirst_WaitStats', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    BEGIN TRY
+        IF OBJECT_ID('dbo.BlitzFirst_FileStats', 'U') IS NOT NULL
+        BEGIN
+            SET @RowsDeleted = 1;
+            WHILE (@RowsDeleted > 0)
+            BEGIN
+                DELETE TOP (10000) FROM dbo.BlitzFirst_FileStats WHERE CheckDate < @PurgeMetricDate;
+                SET @RowsDeleted = @@ROWCOUNT;
+                IF @RowsDeleted > 0 WAITFOR DELAY '00:00:01';
+            END;
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'Purge_BlitzFirst_FileStats', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    BEGIN TRY
+        IF OBJECT_ID('dbo.BlitzFirst_PerfmonStats', 'U') IS NOT NULL
+        BEGIN
+            SET @RowsDeleted = 1;
+            WHILE (@RowsDeleted > 0)
+            BEGIN
+                DELETE TOP (10000) FROM dbo.BlitzFirst_PerfmonStats WHERE CheckDate < @PurgeMetricDate;
+                SET @RowsDeleted = @@ROWCOUNT;
+                IF @RowsDeleted > 0 WAITFOR DELAY '00:00:01';
+            END;
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'Purge_BlitzFirst_PerfmonStats', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    BEGIN TRY
+        IF OBJECT_ID('dbo.BlitzFirst', 'U') IS NOT NULL
+        BEGIN
+            SET @RowsDeleted = 1;
+            WHILE (@RowsDeleted > 0)
+            BEGIN
+                DELETE TOP (10000) FROM dbo.BlitzFirst WHERE CheckDate < @PurgeMetricDate;
+                SET @RowsDeleted = @@ROWCOUNT;
+                IF @RowsDeleted > 0 WAITFOR DELAY '00:00:01';
+            END;
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'Purge_BlitzFirst', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- Purge BlitzLockHistory an toàn theo tên cột
+    BEGIN TRY
+        IF OBJECT_ID('dbo.BlitzLockHistory', 'U') IS NOT NULL
+        BEGIN
+            DECLARE @LockDateCol NVARCHAR(128);
+            SELECT TOP 1 @LockDateCol = name 
+            FROM sys.columns 
+            WHERE object_id = OBJECT_ID('dbo.BlitzLockHistory') 
+              AND name IN ('event_date', 'EventDate', 'CaptureDate', 'CheckDate');
+
+            IF @LockDateCol IS NOT NULL
+            BEGIN
+                DECLARE @SqlPurgeLock NVARCHAR(MAX) = N'
+                DECLARE @Rows INT = 1;
+                WHILE (@Rows > 0)
+                BEGIN
+                    DELETE TOP (10000) FROM dbo.BlitzLockHistory WHERE ' + QUOTENAME(@LockDateCol) + N' < @PurgeDate;
+                    SET @Rows = @@ROWCOUNT;
+                    IF @Rows > 0 WAITFOR DELAY ''00:00:01'';
+                END;';
+                EXEC sp_executesql @SqlPurgeLock, N'@PurgeDate DATETIME2(0)', @PurgeDate = @PurgeMetricDate;
+            END;
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'Purge_BlitzLockHistory', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 5. Purge Audit Log & BlitzResults (Giữ 2 năm)
+    BEGIN TRY
+        IF OBJECT_ID('dbo.BlitzResults', 'U') IS NOT NULL
+        BEGIN
+            SET @RowsDeleted = 1;
+            WHILE (@RowsDeleted > 0)
+            BEGIN
+                DELETE TOP (10000) FROM dbo.BlitzResults WHERE CheckDate < @PurgeAuditDateTime;
+                SET @RowsDeleted = @@ROWCOUNT;
+                IF @RowsDeleted > 0 WAITFOR DELAY '00:00:01';
+            END;
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'Purge_BlitzResults', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    BEGIN TRY
+        SET @RowsDeleted = 1;
+        WHILE (@RowsDeleted > 0)
+        BEGIN
+            DELETE TOP (10000) FROM dbo.DailyCheckAuditLog WHERE CheckDate < @PurgeAuditDate;
+            SET @RowsDeleted = @@ROWCOUNT;
+            IF @RowsDeleted > 0 WAITFOR DELAY '00:00:01';
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'Purge_DailyCheckAuditLog', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 6. Purge Storage Baseline (Giữ 3 năm để phục vụ vẽ xu hướng dung lượng dài hạn)
+    BEGIN TRY
+        DELETE FROM dbo.StorageVolumeBaseline WHERE SnapDate < @PurgeStorageDate;
+        DELETE FROM dbo.StorageDatabaseBaseline WHERE SnapDate < @PurgeStorageDate;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_DailyStorageAndMaintenance', 'Purge_StorageBaseline_3Years', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 7. Purge bảng ErrorLog (> 2 năm)
+    BEGIN TRY
+        SET @RowsDeleted = 1;
+        WHILE (@RowsDeleted > 0)
+        BEGIN
+            DELETE TOP (10000) FROM dbo.DbaMonitorErrorLog WHERE ErrorTime < @PurgeAuditDateTime;
+            SET @RowsDeleted = @@ROWCOUNT;
+            IF @RowsDeleted > 0 WAITFOR DELAY '00:00:01';
+        END;
+    END TRY
+    BEGIN CATCH
+        PRINT CONCAT('Loi khi purge DbaMonitorErrorLog: ', ERROR_MESSAGE());
+    END CATCH;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_ExecuteDailyHealthCheckAndNotify]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   PROCEDURE [dbo].[usp_ExecuteDailyHealthCheckAndNotify]
+    @MailProfileName NVARCHAR(128) = 'DBA',
+    @RecipientEmail VARCHAR(MAX) = 'nghianl.ts@vietsov.com.vn;lamll.ts@vietsov.com.vn'
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @CheckDate DATE = CAST(SYSDATETIME() AS DATE);
+    DECLARE @AlertCount INT = 0;
+
+    CREATE TABLE #DailyIssues (
+        Category VARCHAR(50),
+        Severity VARCHAR(10),
+        Details NVARCHAR(MAX)
+    );
+
+    -- 0. TỰ GIÁM SÁT HỆ THỐNG MONITORING (WATCHDOG: 4 Job & Bảng Log lỗi)
+    BEGIN TRY
+        -- A. Kiểm tra nếu bất kỳ Job cốt lõi nào bị disable
+        INSERT INTO #DailyIssues (Category, Severity, Details)
+        SELECT 'Monitoring Job Health', 'CRITICAL',
+               CONCAT('Job giam sat [', j.name, '] dang bi DISABLE! He thong bi vo hieu hoa.')
+        FROM msdb.dbo.sysjobs j
+        WHERE j.name IN (
+            'DBA - HealthCheck - Metric Collection',
+            'DBA - HealthCheck - Daily Operational Assessment',
+            'DBA - HealthCheck - Daily Storage & Maintenance',
+            'DBA - HealthCheck - Weekly Comprehensive Assessment'
+        ) AND j.enabled = 0;
+
+        -- B. Kiểm tra nếu Job 5 phút không chạy thành công trong 30 phút qua
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM msdb.dbo.sysjobs j
+            INNER JOIN msdb.dbo.sysjobhistory jh ON j.job_id = jh.job_id
+            WHERE j.name = 'DBA - HealthCheck - Metric Collection'
+              AND jh.step_id = 0
+              AND jh.run_status = 1
+              AND msdb.dbo.agent_datetime(jh.run_date, jh.run_time) >= DATEADD(MINUTE, -30, SYSDATETIME())
+        )
+        BEGIN
+            INSERT INTO #DailyIssues (Category, Severity, Details)
+            VALUES ('Monitoring Job Health', 'CRITICAL', 'Job [DBA - HealthCheck - Metric Collection] khong co lan chay thanh cong nao trong 30 phut qua!');
+        END;
+
+        -- C. Kiểm tra lỗi hệ thống nội bộ ghi trong DbaMonitorErrorLog 24h qua
+        INSERT INTO #DailyIssues (Category, Severity, Details)
+        SELECT 'Internal Monitoring Error', 'WARN',
+               CONCAT('[', ProcedureName, ' / ', ErrorStep, '] luc ', CONVERT(VARCHAR(19), ErrorTime, 120), ': ', ErrorMessage)
+        FROM dbo.DbaMonitorErrorLog
+        WHERE ErrorTime >= DATEADD(HOUR, -24, SYSDATETIME());
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteDailyHealthCheckAndNotify', 'Watchdog_MonitoringJobs', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 1. Kiểm tra trạng thái SQL Engine và SQL Agent Service
+    BEGIN TRY
+        INSERT INTO #DailyIssues (Category, Severity, Details)
+        SELECT 'Core Services', 'CRITICAL',
+               CONCAT('Dich vu [', servicename, '] dang o trang thai: ', status_desc)
+        FROM sys.dm_server_services
+        WHERE (servicename LIKE 'SQL Server (%' OR servicename LIKE 'SQL Server Agent (%')
+          AND status_desc <> 'Running';
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteDailyHealthCheckAndNotify', 'CheckServices', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 2. Audit cấu hình qua sp_Blitz: AN TOÀN TUYỆT ĐỐI (Dùng Snapshot Watermark, @CheckUserDatabaseObjects = 0, @BringThePain = 0)
+    BEGIN TRY
+        DECLARE @BlitzStartTime DATETIMEOFFSET = SYSDATETIMEOFFSET();
+
+        EXEC dbo.sp_Blitz 
+            @OutputDatabaseName = 'DbaMonitor',
+            @OutputSchemaName = 'dbo',
+            @OutputTableName = 'BlitzResults',
+            @CheckUserDatabaseObjects = 0, -- Không quét sâu objects của 50+ DBs
+            @CheckServerInfo = 1,
+            @BringThePain = 0;
+
+        -- Xác định chính xác mốc CheckDate của lần chạy vừa xong
+        DECLARE @LatestBlitzDate DATETIMEOFFSET;
+
+        SELECT @LatestBlitzDate = MAX(CheckDate)
+        FROM dbo.BlitzResults
+        WHERE CheckDate >= DATEADD(MINUTE, -2, @BlitzStartTime); -- Trừ hao 2 phút phòng lệch clock nội bộ
+
+        IF @LatestBlitzDate IS NOT NULL
+        BEGIN
+            INSERT INTO #DailyIssues (Category, Severity, Details)
+            SELECT 'FRK Blitz Finding', 
+                   CASE WHEN Priority <= 20 THEN 'CRITICAL' ELSE 'WARN' END,
+                   CONCAT('[', FindingsGroup, '] ', Finding, ' - DB: ', ISNULL(DatabaseName, 'Global'), ': ', Details)
+            FROM dbo.BlitzResults
+            WHERE CheckDate = @LatestBlitzDate -- Khớp CHÍNH XÁC đợt audit vừa chạy
+              AND Priority <= 50;
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteDailyHealthCheckAndNotify', 'sp_Blitz', ERROR_MESSAGE(), ERROR_LINE());
+
+        INSERT INTO #DailyIssues (Category, Severity, Details)
+        VALUES ('FRK Blitz Engine', 'WARN', CONCAT('sp_Blitz gap su co: ', ERROR_MESSAGE()));
+    END CATCH;
+
+    -- 3. Kiểm tra SLA Backup (Loại trừ tempdb, model; Full <= 24h & Log <= 30m)
+    BEGIN TRY
+        INSERT INTO #DailyIssues (Category, Severity, Details)
+        SELECT 'Backup SLA', 'CRITICAL',
+               CONCAT('Database [', d.name, '] khong co ban FULL backup trong 24 gio qua!')
+        FROM sys.databases d
+        WHERE d.name NOT IN ('tempdb', 'model') 
+          AND d.source_database_id IS NULL 
+          AND d.state_desc = 'ONLINE'
+          AND NOT EXISTS (
+              SELECT 1 FROM msdb.dbo.backupset b 
+              WHERE b.database_name = d.name AND b.type = 'D' AND b.backup_finish_date >= DATEADD(HOUR, -24, SYSDATETIME())
+          );
+
+        INSERT INTO #DailyIssues (Category, Severity, Details)
+        SELECT 'Backup SLA', 'CRITICAL',
+               CONCAT('Database [', d.name, '] (FULL recovery) khong co LOG backup trong 30 phut qua!')
+        FROM sys.databases d
+        WHERE d.recovery_model_desc = 'FULL' 
+          AND d.state_desc = 'ONLINE' 
+          AND d.name NOT IN ('tempdb', 'model')
+          AND NOT EXISTS (
+              SELECT 1 FROM msdb.dbo.backupset b 
+              WHERE b.database_name = d.name AND b.type = 'L' AND b.backup_finish_date >= DATEADD(MINUTE, -30, SYSDATETIME())
+          );
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteDailyHealthCheckAndNotify', 'CheckBackups', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 4. Kiểm tra AlwaysOn Availability Groups (Lag send/redo queue)
+    IF SERVERPROPERTY('IsHadrEnabled') = 1
+    BEGIN
+        BEGIN TRY
+            INSERT INTO #DailyIssues (Category, Severity, Details)
+            SELECT 'AlwaysOn Health', 'CRITICAL',
+                   CONCAT('AG Replica [', rcs.replica_server_name, '] tren DB [', DB_NAME(drs.database_id), '] lech! Redo Queue: ', 
+                          drs.redo_queue_size, ' KB, Send Queue: ', drs.log_send_queue_size, ' KB, State: ', drs.synchronization_health_desc)
+            FROM sys.dm_hadr_database_replica_states drs
+            INNER JOIN sys.dm_hadr_availability_replica_cluster_states rcs ON drs.replica_id = rcs.replica_id
+            WHERE drs.synchronization_health_desc <> 'HEALTHY' 
+               OR drs.redo_queue_size > 51200
+               OR drs.log_send_queue_size > 51200;
+        END TRY
+        BEGIN CATCH
+            INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+            VALUES ('usp_ExecuteDailyHealthCheckAndNotify', 'CheckAlwaysOn', ERROR_MESSAGE(), ERROR_LINE());
+        END CATCH;
+    END;
+
+    -- 5. Kiểm tra TempDB phình dung lượng và Version Store
+    BEGIN TRY
+        INSERT INTO #DailyIssues (Category, Severity, Details)
+        SELECT 'TempDB Health', 'WARN',
+               CONCAT('TempDB Space can kieng! Free: ', CAST(free_space_mb AS VARCHAR), ' MB, Version Store chiem: ', 
+                      CAST(version_store_mb AS VARCHAR), ' MB (', CAST((version_store_mb * 100.0 / total_space_mb) AS DECIMAL(5,2)), '%)')
+        FROM (
+            SELECT 
+                SUM(total_page_count) * 8.0 / 1024.0 AS total_space_mb,
+                SUM(unallocated_extent_page_count) * 8.0 / 1024.0 AS free_space_mb,
+                SUM(version_store_reserved_page_count) * 8.0 / 1024.0 AS version_store_mb
+            FROM tempdb.sys.dm_db_file_space_usage
+        ) t
+        WHERE free_space_mb < 2048 OR (version_store_mb * 100.0 / total_space_mb) > 30.0;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteDailyHealthCheckAndNotify', 'CheckTempDB', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 6. Kiểm tra các SQL Agent Jobs thất bại trong 24h qua
+    BEGIN TRY
+        INSERT INTO #DailyIssues (Category, Severity, Details)
+        SELECT 'SQL Agent Job', 'WARN',
+               CONCAT('Job [', j.name, '] that bai luc ', msdb.dbo.agent_datetime(jh.run_date, jh.run_time), '. Message: ', jh.message)
+        FROM msdb.dbo.sysjobs j
+        INNER JOIN msdb.dbo.sysjobhistory jh ON j.job_id = jh.job_id
+        WHERE jh.run_status = 0 AND jh.step_id = 0
+          AND msdb.dbo.agent_datetime(jh.run_date, jh.run_time) >= DATEADD(HOUR, -24, SYSDATETIME());
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteDailyHealthCheckAndNotify', 'CheckJobs', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 7. Kiểm tra phân vùng đĩa cứng (< 15% Free)
+    BEGIN TRY
+        INSERT INTO #DailyIssues (Category, Severity, Details)
+        SELECT DISTINCT 'Disk Space', 'CRITICAL',
+               CONCAT('Drive ', vs.volume_mount_point, ' chi con ', CAST(vs.available_bytes / 1073741824.0 AS DECIMAL(10,2)), ' GB (', 
+                      CAST((vs.available_bytes * 100.0 / vs.total_bytes) AS DECIMAL(5,2)), '% free)!')
+        FROM sys.master_files mf
+        CROSS APPLY sys.dm_os_volume_stats(mf.database_id, mf.file_id) vs
+        WHERE (vs.available_bytes * 100.0 / vs.total_bytes) < 15.0;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteDailyHealthCheckAndNotify', 'CheckDiskSpace', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- Ghi nhận dữ liệu vào bảng DailyCheckAuditLog
+    INSERT INTO dbo.DailyCheckAuditLog (CheckDate, CheckCategory, SeverityLevel, CheckDetails)
+    SELECT @CheckDate, Category, Severity, Details FROM #DailyIssues;
+
+    SELECT @AlertCount = COUNT(*) FROM #DailyIssues;
+
+    -- 8. Gửi mail cảnh báo HTML
+    IF @AlertCount > 0
+    BEGIN
+        DECLARE @HtmlBody NVARCHAR(MAX);
+        DECLARE @EmailSubject NVARCHAR(255) = CONCAT('SQL Server Daily Health Alert: [', @@SERVERNAME, '] - ', CAST(@AlertCount AS VARCHAR), ' Issues Found');
+
+        SET @HtmlBody = N'
+        <html>
+        <head>
+            <style>
+                body {font-family: Arial, sans-serif; font-size: 13px;}
+                table {border-collapse: collapse; width: 100%;}
+                th {background-color: #004D40; color: white; text-align: left; padding: 8px;}
+                td {border: 1px solid #ddd; padding: 8px;}
+                .CRITICAL {background-color: #FFCDD2; color: #B71C1C; font-weight: bold;}
+                .WARN {background-color: #FFF9C4; color: #F57F17;}
+            </style>
+        </head>
+        <body>
+            <h3>Ket qua Daily Operational Assessment: ' + @@SERVERNAME + N'</h3>
+            <p>Phat hien <b>' + CAST(@AlertCount AS VARCHAR) + N'</b> muc can chu y truoc gio lam viec:</p>
+            <table>
+                <tr><th>Category</th><th>Severity</th><th>Details</th></tr>' +
+                CAST((
+                    SELECT 
+                        td = Category, '',
+                        td = Severity, '',
+                        td = Details, ''
+                    FROM #DailyIssues
+                    ORDER BY CASE WHEN Severity = 'CRITICAL' THEN 1 ELSE 2 END
+                    FOR XML PATH('tr'), TYPE
+                ) AS NVARCHAR(MAX)) +
+            N'</table>
+            <br/><p><i>Bao cao tao tu dong boi DbaMonitor - Chay luc 06:00 AM hang ngay.</i></p>
+        </body></html>';
+
+        EXEC msdb.dbo.sp_send_dbmail
+            @profile_name = @MailProfileName,
+            @recipients = @RecipientEmail,
+            @subject = @EmailSubject,
+            @body = @HtmlBody,
+            @body_format = 'HTML';
+    END;
+END;
+GO
+/****** Object:  StoredProcedure [dbo].[usp_ExecuteWeeklyAssessmentAndNotify]    Script Date: 9/25/2026 3:54:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[usp_ExecuteWeeklyAssessmentAndNotify]
+    @MailProfileName NVARCHAR(128) = 'DBA_Alerts',
+    @RecipientEmail VARCHAR(MAX) = 'dba-team@example.com'
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Phân tích CPU 30 ngày (SQL Process CPU vs Host CPU)
+    DECLARE @AvgSqlCpu INT = 0, @AvgHostCpu INT = 0, @HighCpuHours DECIMAL(6,2) = 0;
+
+    BEGIN TRY
+        SELECT 
+            @AvgSqlCpu = AVG(CAST(CpuSqlPercent AS INT)),
+            @AvgHostCpu = AVG(CAST((100 - CpuIdlePercent) AS INT)),
+            @HighCpuHours = CAST(COUNT(CASE WHEN (100 - CpuIdlePercent) >= 80 THEN 1 END) * 5.0 / 60.0 AS DECIMAL(6,2))
+        FROM dbo.PerformanceSnapHistory
+        WHERE SnapTime >= DATEADD(DAY, -30, SYSDATETIME());
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteWeeklyAssessmentAndNotify', 'CPU_30d', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 2. Top Wait Stats 7 ngày từ BlitzFirst_WaitStats_Deltas (Ignorable = 0)
+    IF OBJECT_ID('tempdb..#TopWaits7d') IS NOT NULL DROP TABLE #TopWaits7d;
+    CREATE TABLE #TopWaits7d (
+        WaitType NVARCHAR(128),
+        TotalWaitSec DECIMAL(18,2),
+        PctOfTotal DECIMAL(5,2)
+    );
+
+    BEGIN TRY
+        IF OBJECT_ID('dbo.BlitzFirst_WaitStats_Deltas', 'V') IS NOT NULL
+        BEGIN
+            ;WITH WaitSummary AS (
+                SELECT 
+                    wait_type AS WaitType,
+                    SUM(wait_time_ms_delta) / 1000.0 AS TotalWaitSec
+                FROM dbo.BlitzFirst_WaitStats_Deltas
+                WHERE CheckDate >= DATEADD(DAY, -7, SYSDATETIME())
+                  AND Ignorable = 0
+                GROUP BY wait_type
+                HAVING SUM(wait_time_ms_delta) > 0
+            )
+            INSERT INTO #TopWaits7d (WaitType, TotalWaitSec, PctOfTotal)
+            SELECT TOP 5
+                WaitType,
+                CAST(TotalWaitSec AS DECIMAL(18,2)),
+                CAST(TotalWaitSec * 100.0 / NULLIF(SUM(TotalWaitSec) OVER(), 0) AS DECIMAL(5,2))
+            FROM WaitSummary
+            ORDER BY TotalWaitSec DESC;
+        END;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteWeeklyAssessmentAndNotify', 'TopWaits7d', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 3. 30-Day Weighted Average I/O Latency (Lọc counter reset do Server restart)
+    IF OBJECT_ID('tempdb..#IoStats30d') IS NOT NULL DROP TABLE #IoStats30d;
+    CREATE TABLE #IoStats30d (
+        DatabaseName NVARCHAR(128),
+        LogicalFileName NVARCHAR(128),
+        WeightedAvgReadLatencyMs DECIMAL(10,2),
+        WeightedAvgWriteLatencyMs DECIMAL(10,2)
+    );
+
+    BEGIN TRY
+        ;WITH Snaps AS (
+            SELECT DatabaseID, FileID, DatabaseName, LogicalFileName,
+                   NumOfReads, IoStallReadMs, NumOfWrites, IoStallWriteMs, SnapTime,
+                   ROW_NUMBER() OVER (PARTITION BY DatabaseID, FileID ORDER BY SnapTime ASC) AS rn_first,
+                   ROW_NUMBER() OVER (PARTITION BY DatabaseID, FileID ORDER BY SnapTime DESC) AS rn_last
+            FROM dbo.FileIOStatsSnapshot
+            WHERE SnapTime >= DATEADD(DAY, -30, SYSDATETIME())
+        ),
+        Boundaries AS (
+            SELECT 
+                l.DatabaseName, l.LogicalFileName,
+                (l.NumOfReads - e.NumOfReads) AS DeltaReads,
+                (l.IoStallReadMs - e.IoStallReadMs) AS DeltaReadStall,
+                (l.NumOfWrites - e.NumOfWrites) AS DeltaWrites,
+                (l.IoStallWriteMs - e.IoStallWriteMs) AS DeltaWriteStall
+            FROM Snaps l
+            INNER JOIN Snaps e ON l.DatabaseID = e.DatabaseID AND l.FileID = e.FileID AND e.rn_first = 1 AND l.rn_last = 1
+            WHERE l.NumOfReads >= e.NumOfReads AND l.NumOfWrites >= e.NumOfWrites
+        )
+        INSERT INTO #IoStats30d (DatabaseName, LogicalFileName, WeightedAvgReadLatencyMs, WeightedAvgWriteLatencyMs)
+        SELECT TOP 5
+            DatabaseName,
+            LogicalFileName,
+            CAST(DeltaReadStall * 1.0 / NULLIF(DeltaReads, 0) AS DECIMAL(10,2)) AS WeightedAvgReadLatencyMs,
+            CAST(DeltaWriteStall * 1.0 / NULLIF(DeltaWrites, 0) AS DECIMAL(10,2)) AS WeightedAvgWriteLatencyMs
+        FROM Boundaries
+        WHERE DeltaReads > 0 OR DeltaWrites > 0
+        ORDER BY WeightedAvgReadLatencyMs DESC;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteWeeklyAssessmentAndNotify', 'IoStats30d', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 4. Dự báo Cạn đĩa (Runway Forecast)
+    IF OBJECT_ID('tempdb..#Runway') IS NOT NULL DROP TABLE #Runway;
+    CREATE TABLE #Runway (
+        VolumeMountPoint NVARCHAR(260),
+        AvailableSpaceGB DECIMAL(18,2),
+        MonthlyDropGB DECIMAL(18,2),
+        RunwayMonths DECIMAL(5,1)
+    );
+
+    BEGIN TRY
+        INSERT INTO #Runway (VolumeMountPoint, AvailableSpaceGB, MonthlyDropGB, RunwayMonths)
+        SELECT 
+            curr.VolumeMountPoint,
+            curr.AvailableSpaceGB,
+            CAST((past.AvailableSpaceGB - curr.AvailableSpaceGB) * 1.0 / DATEDIFF(DAY, past.SnapDate, curr.SnapDate) * 30.4375 AS DECIMAL(18,2)),
+            CASE 
+                WHEN (past.AvailableSpaceGB - curr.AvailableSpaceGB) > 0 
+                THEN CAST(curr.AvailableSpaceGB / NULLIF((past.AvailableSpaceGB - curr.AvailableSpaceGB) * 1.0 / DATEDIFF(DAY, past.SnapDate, curr.SnapDate) * 30.4375, 0) AS DECIMAL(5,1))
+                ELSE 999.0 
+            END
+        FROM dbo.StorageVolumeBaseline curr
+        INNER JOIN dbo.StorageVolumeBaseline past ON curr.VolumeMountPoint = past.VolumeMountPoint
+        WHERE curr.SnapDate = CAST(SYSDATETIME() AS DATE)
+          AND past.SnapDate = (
+              SELECT MAX(SnapDate) FROM dbo.StorageVolumeBaseline 
+              WHERE SnapDate <= DATEADD(DAY, -25, CAST(SYSDATETIME() AS DATE))
+          );
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteWeeklyAssessmentAndNotify', 'RunwayForecast', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 5. Lấy lại Top Findings khẩn cấp đã ghi nhận trong tuần qua từ BlitzResults
+    IF OBJECT_ID('tempdb..#WeeklyTopFindings') IS NOT NULL DROP TABLE #WeeklyTopFindings;
+    CREATE TABLE #WeeklyTopFindings (
+        Priority TINYINT,
+        FindingsGroup VARCHAR(50),
+        Finding VARCHAR(200),
+        DatabaseName NVARCHAR(128),
+        Details NVARCHAR(MAX)
+    );
+
+    BEGIN TRY
+        INSERT INTO #WeeklyTopFindings (Priority, FindingsGroup, Finding, DatabaseName, Details)
+        SELECT TOP 5 Priority, FindingsGroup, Finding, DatabaseName, Details
+        FROM dbo.BlitzResults
+        WHERE CheckDate >= DATEADD(DAY, -7, SYSDATETIME())
+          AND Priority <= 50
+        ORDER BY Priority ASC, CheckDate DESC;
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteWeeklyAssessmentAndNotify', 'GetWeeklyFindings', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+
+    -- 6. Render HTML an toàn và gửi Mail Báo cáo Tuần
+    BEGIN TRY
+        DECLARE @Body NVARCHAR(MAX);
+        SET @Body = N'
+        <html>
+        <head>
+            <style>
+                body {font-family: Arial, sans-serif; font-size: 13px;}
+                table {border-collapse: collapse; width: 90%; margin-bottom: 20px;}
+                th {background-color: #1A237E; color: white; padding: 7px; text-align: left;}
+                td {border: 1px solid #ccc; padding: 7px;}
+                .warn {color: #E65100; font-weight: bold;}
+                .crit {color: #B71C1C; font-weight: bold;}
+            </style>
+        </head>
+        <body>
+            <h2>BÁO CÁO ĐÁNH GIÁ CHUYÊN SÂU HỆ THỐNG (WEEKLY) - ' + @@SERVERNAME + N'</h2>
+
+            <h3>1. Bức tranh Tải CPU 30 Ngày</h3>
+            <ul>
+                <li>SQL Server Process CPU Trung bình: <b>' + CAST(ISNULL(@AvgSqlCpu, 0) AS VARCHAR) + N'%</b></li>
+                <li>Host/Server OS CPU Trung bình: <b>' + CAST(ISNULL(@AvgHostCpu, 0) AS VARCHAR) + N'%</b></li>
+                <li>Tổng số giờ CPU máy chủ quá tải (>= 80%): <b>' + CAST(ISNULL(@HighCpuHours, 0) AS VARCHAR) + N' giờ</b></li>
+            </ul>
+
+            <h3>2. Top Wait Stats 7 Ngày (BlitzFirst_WaitStats_Deltas)</h3>
+            <table>
+                <tr><th>Wait Type</th><th>Total Wait Delta (s)</th><th>% Trong Top</th></tr>' +
+                ISNULL(CAST((
+                    SELECT td = WaitType, '', td = TotalWaitSec, '', td = PctOfTotal, ''
+                    FROM #TopWaits7d FOR XML PATH('tr'), TYPE
+                ) AS NVARCHAR(MAX)), '<tr><td colspan="3">Chua du du lieu 7 ngay Wait Stats</td></tr>') +
+            N'</table>
+
+            <h3>3. 30-Day Weighted Average I/O Latency (Độ trễ Đọc/Ghi thực tế)</h3>
+            <table>
+                <tr><th>Database</th><th>File Logic</th><th>Avg Read Latency (ms)</th><th>Avg Write Latency (ms)</th></tr>' +
+                ISNULL(CAST((
+                    SELECT td = DatabaseName, '', td = LogicalFileName, '', 
+                           td = WeightedAvgReadLatencyMs, '', td = WeightedAvgWriteLatencyMs, ''
+                    FROM #IoStats30d FOR XML PATH('tr'), TYPE
+                ) AS NVARCHAR(MAX)), '<tr><td colspan="4">Chua co du lieu I/O thoa man</td></tr>') +
+            N'</table>
+
+            <h3>4. Dự báo Cạn đĩa (Runway Forecast)</h3>
+            <table>
+                <tr><th>Phân vùng</th><th>Trống (GB)</th><th>Mức tiêu thụ ước tính (GB/tháng)</th><th>Dự phóng cạn đĩa</th></tr>' +
+                ISNULL(CAST((
+                    SELECT td = VolumeMountPoint, '', td = AvailableSpaceGB, '', td = MonthlyDropGB, '',
+                           td = CASE 
+                                    WHEN RunwayMonths <= 1.5 THEN CONCAT('CRITICAL: con ', RunwayMonths, ' thang')
+                                    WHEN RunwayMonths <= 3.0 THEN CONCAT('WARN: con ', RunwayMonths, ' thang')
+                                    ELSE CONCAT(RunwayMonths, ' thang')
+                                END, ''
+                    FROM #Runway FOR XML PATH('tr'), TYPE
+                ) AS NVARCHAR(MAX)), '<tr><td colspan="4">Chua du moc baseline 30 ngay</td></tr>') +
+            N'</table>
+
+            <h3>5. Top Cảnh Báo Cấu Hình Nổi Bật Trong Tuần (sp_Blitz)</h3>
+            <table>
+                <tr><th>Priority</th><th>Nhóm</th><th>Finding</th><th>Database</th><th>Details</th></tr>' +
+                ISNULL(CAST((
+                    SELECT td = Priority, '', td = FindingsGroup, '', td = Finding, '', 
+                           td = ISNULL(DatabaseName, 'Global'), '', td = Details, ''
+                    FROM #WeeklyTopFindings FOR XML PATH('tr'), TYPE
+                ) AS NVARCHAR(MAX)), '<tr><td colspan="5">Khong co canh bao Priority <= 50 nao trong tuan qua</td></tr>') +
+            N'</table>
+            <br/><p><i>Báo cáo sinh tự động bởi DbaMonitor - 06:00 AM Chủ Nhật.</i></p>
+        </body></html>';
+
+        EXEC msdb.dbo.sp_send_dbmail
+            @profile_name = @MailProfileName,
+            @recipients = @RecipientEmail,
+            @subject = N'SQL Server Weekly Comprehensive Health Audit',
+            @body = @Body,
+            @body_format = 'HTML';
+    END TRY
+    BEGIN CATCH
+        INSERT INTO dbo.DbaMonitorErrorLog (ProcedureName, ErrorStep, ErrorMessage, ErrorLine)
+        VALUES ('usp_ExecuteWeeklyAssessmentAndNotify', 'RenderAndSendMail', ERROR_MESSAGE(), ERROR_LINE());
+    END CATCH;
+END;
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'The major version number.' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlServerVersions', @level2type=N'COLUMN',@level2name=N'MajorVersionNumber'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'The minor version number.' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlServerVersions', @level2type=N'COLUMN',@level2name=N'MinorVersionNumber'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'The update level of the build. CU indicates a cumulative update. SP indicates a service pack. RTM indicates Release To Manufacturer. GDR indicates a General Distribution Release. QFE indicates Quick Fix Engineering (aka hotfix).' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlServerVersions', @level2type=N'COLUMN',@level2name=N'Branch'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'A link to the KB article for a version.' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlServerVersions', @level2type=N'COLUMN',@level2name=N'Url'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'The date the version was publicly released.' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlServerVersions', @level2type=N'COLUMN',@level2name=N'ReleaseDate'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'The date main stream Microsoft support ends for the version.' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlServerVersions', @level2type=N'COLUMN',@level2name=N'MainstreamSupportEndDate'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'The date extended Microsoft support ends for the version.' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlServerVersions', @level2type=N'COLUMN',@level2name=N'ExtendedSupportEndDate'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'The major version name.' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlServerVersions', @level2type=N'COLUMN',@level2name=N'MajorVersionName'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'The minor version name.' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlServerVersions', @level2type=N'COLUMN',@level2name=N'MinorVersionName'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'A reference for SQL Server major and minor versions.' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'SqlServerVersions'
+GO
