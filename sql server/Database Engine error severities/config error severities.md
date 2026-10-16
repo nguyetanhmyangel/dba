@@ -43,14 +43,14 @@ BEGIN
     EXEC msdb.dbo.sp_add_operator 
         @name = N'DBA', 
         @enabled = 1, 
-        @email_address = N'sqlalert@vietsov.com.vn';
+        @email_address = N'nghianl.ts@vietsov.com.vn; lamlh.ts@vietsov.com.vn';
 END
 ELSE
 BEGIN
     EXEC msdb.dbo.sp_update_operator 
         @name = N'DBA', 
         @enabled = 1, 
-        @email_address = N'sqlalert@vietsov.com.vn';
+        @email_address = N'nghianl.ts@vietsov.com.vn; lamlh.ts@vietsov.com.vn';
 END
 GO
 

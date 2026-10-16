@@ -1,7 +1,23 @@
 #### Page Verification TORN_PAGE_DETECTION: 
 - Cơ chế cũ để phát hiện page bị ghi dở dang/corruption nên đổi sang CHECKSUM để kiểm tra tính toàn vẹn page tốt hơn.
+- Lưu ý quan trọng sau khi đổi sang CHECKSUM:
+	- Cơ chế hoạt động: Lệnh trên chỉ bắt đầu tính mã checksum cho các trang dữ liệu (pages) mỗi khi chúng được 
+	  ghi lại (modified & written to disk). Các dữ liệu cũ chưa chỉnh sửa vẫn chưa có mã checksum ngay.
+	- Kiểm tra tính toàn vẹn hiện tại: chạy lệnh kiểm tra xem database hiện tại có đang bị lỗi hỏng vật lý nào 
+	  từ trước hay không:
+
+	```SQL
+	-- Quét kiểm tra toàn vẹn database sau khi checksum
+	DBCC CHECKDB ([your-db]) WITH NO_INFOMSGS, ALL_ERRORMSGS;
+	GO
+	```
+
+- Script:
 
 ```sql
+USE [master];
+GO
+
 ALTER DATABASE [thluong]
 SET PAGE_VERIFY CHECKSUM
 WITH NO_WAIT;
@@ -121,4 +137,21 @@ END;
 CLOSE db_cursor;
 DEALLOCATE db_cursor;
 GO
+```
+#### Bật default trace
+
+```sql
+EXEC sys.sp_configure 'show advanced options', 1;
+RECONFIGURE;
+GO
+
+EXEC sys.sp_configure 'default trace enabled', 1;
+RECONFIGURE;
+GO
+-- check
+SELECT
+    name,
+    value_in_use
+FROM sys.configurations
+WHERE name = 'default trace enabled';
 ```

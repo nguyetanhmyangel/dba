@@ -63,6 +63,14 @@ EXEC msdb.dbo.sysmail_update_profile_sp
     @description = N'Database Mail profile used by SQL Server DBA alerts and notifications';
 ```
 
+- Update profile name
+```sql
+EXEC msdb.dbo.sysmail_update_profile_sp
+    @profile_id = 1,
+    @profile_name = N'DBA',
+    @description = N'Database Mail profile used by SQL Server DBA alerts and notifications';
+```
+
 - Principal/user nào được phép sử dụng Database Mail Profile
 ```sql
 SELECT p.name AS ProfileName, pr.name AS PrincipalName, pp.is_default
@@ -151,7 +159,7 @@ SET XACT_ABORT ON;
 DECLARE
     @ProfileName        sysname = N'DBA',
     @ExpectedPrincipal  sysname = N'VIETSOV\sqlcluster',
-    @OperatorName       sysname = N'DBA'; -- Đổi thành N'DBAs' nếu bạn đặt tên có 's'
+    @OperatorName       sysname = N'DBA'; 
 
 ------------------------------------------------------------
 -- 0. HEADER

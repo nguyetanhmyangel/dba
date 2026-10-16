@@ -28,15 +28,15 @@ GO
 #### /*==============================================================================
 ####    STEP 2 - CREATE DATABASE MAIL ACCOUNT
 #### ==============================================================================*/
-```# ql
+```
 USE msdb;
 GO
 
 DECLARE
-    @AccountName   sysname        = N'DBA_MailAccount',
+    @AccountName   sysname        = N'DBA',
     @EmailAddress  nvarchar(128) = N'sqlalerts@vietsov.com.vn',
     @DisplayName   nvarchar(128) = N'SQL Server DBA Alert',
-    @MailServer    nvarchar(128) = N'smtp.vietsov.com.vn',
+    @MailServer    nvarchar(128) = N'mail.vietsov.com.vn',
     @MailPort      int            = 25,
     @EnableSSL     bit            = 0;
 
@@ -87,7 +87,7 @@ GO
 ```sql
 DECLARE
     @ProfileName sysname = N'DBA',
-    @AccountName sysname = N'DBA_MailAccount';
+    @AccountName sysname = N'DBA';
 
 IF NOT EXISTS
 (
@@ -114,7 +114,7 @@ GO
 #### /*==============================================================================
 ####    STEP 5 - CREATE / MAP LOGIN INTO MSDB
 #### ==============================================================================*/
-```# ql
+```
 DECLARE @AgentLogin sysname = N'VIETSOV\sqlcluster';
 
 IF SUSER_ID(@AgentLogin) IS NULL
