@@ -26,7 +26,7 @@ rsync -av file.zip oracle@192.168.1.21:/home/oracle
   ```bash
   ssh -X oracle@192.168.1.21
   ```
-  👉 Sau đó:
+  Sau đó:
   ```bash
   ./runInstaller
   ```
@@ -34,3 +34,11 @@ rsync -av file.zip oracle@192.168.1.21:/home/oracle
   ```bash
   yum install tigervnc-server
   ```
+  
+### ssh vào máy ảo từ xa:
+
+C:\Users\minhn>ssh -J nghianl.ts@172.19.13.27 root@192.168.56.101
+nghianl.ts@172.19.13.27's password: -> nhập password vào máy remote
+root@192.168.56.101's password: -> nhập passwrod vào máy ảo trên máy thật remote
+Last login: Mon Oct 19 11:35:17 2026
+[root@oracle-lab ~]#

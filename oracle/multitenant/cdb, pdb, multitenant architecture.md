@@ -24,6 +24,16 @@ Multitenant bao gồm:
 
 - Services: Mỗi PDB có thể đăng ký dịch vụ riêng để kết nối.
 
+| Đặc điểm                    | `CDB$ROOT` (Root Container)                                 | `PDB$SEED` (Seed Template)                                            |
+| --------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------- |
+| **CON_ID**                  | `1`                                                         | `2`                                                                   |
+| **Bản chất**                | Container gốc của CDB                                       | PDB mẫu để tạo PDB mới                                                |
+| **Trạng thái mở**           | `READ WRITE` (thông thường)                                 | `READ ONLY`                                                           |
+| **Mục đích sử dụng**        | Quản lý CDB, metadata hệ thống và các thành phần dùng chung | Làm nguồn mẫu khi chạy `CREATE PLUGGABLE DATABASE`                    |
+| **Dữ liệu người dùng**      | Không khuyến nghị lưu dữ liệu nghiệp vụ                     | Không dùng để lưu dữ liệu nghiệp vụ                                   |
+| **Các đối tượng bên trong** | Data dictionary gốc, Oracle packages và các view hệ thống   | Cấu trúc và thành phần cần thiết làm mẫu cho PDB mới                  |
+| **Khả năng xóa / sửa**      | Không thể xóa container gốc; thay đổi theo quy tắc Oracle   | Không nên sửa trực tiếp hoặc xóa nếu còn cần tạo PDB từ seed mặc định |
+
 ### 3. Sử dụng Data Dictionary Views và V$ Views trong CDB
 
 Khi đang ở chế độ CDB:
