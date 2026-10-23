@@ -5,11 +5,13 @@ Một điểm quan trọng cần phân biệt ngay từ đầu:
 - CDB parameters: các tham số khởi tạo của Oracle instance, thường được quản lý ở cấp CDB/instance.
 - PDB parameters: các tham số mà Oracle cho phép đặt giá trị riêng cho từng PDB, gọi là PDB-modifiable parameters.
 - Không phải mọi tham số của CDB đều có thể cấu hình riêng cho PDB.
-- `DATABASE_PROPERTIES`, `CDB_PROPERTIES` và `V$PARAMETER` là các view phục vụ những mục đích khác nhau; không thể dùng chúng thay thế cho nhau.
+- `DATABASE_PROPERTIES`, `CDB_PROPERTIES` và `V$PARAMETER` là các view phục vụ những mục đích khác nhau; 
+không thể dùng chúng thay thế cho nhau.
 
 ## 1. Khái niệm Initialization Parameters
 
-Trong Oracle Database, **Initialization Parameters** là các tham số điều khiển cách Oracle instance khởi động, sử dụng bộ nhớ, quản lý session, xử lý SQL, ghi redo, quản lý tiến trình và nhiều hoạt động khác.
+Trong Oracle Database, **Initialization Parameters** là các tham số điều khiển cách Oracle instance khởi động, 
+sử dụng bộ nhớ, quản lý session, xử lý SQL, ghi redo, quản lý tiến trình và nhiều hoạt động khác.
 
 Ví dụ:
 
@@ -83,7 +85,8 @@ SHOW PARAMETER processes;
 
 Những tham số này ảnh hưởng đến instance và có thể có phạm vi tác động rộng hơn một PDB.
 
-Ví dụ `SGA_TARGET` liên quan đến bộ nhớ SGA của instance. Không thể đặt mỗi PDB một SGA riêng bằng cách thay đổi tham số này trong PDB.
+Ví dụ `SGA_TARGET` liên quan đến bộ nhớ SGA của instance. Không thể đặt mỗi PDB một SGA riêng bằng cách thay đổi 
+tham số này trong PDB.
 
 ### 2.2. PDB Parameters
 
@@ -211,7 +214,7 @@ ORDER BY ordinal;
 
 ### 3.5. `SHOW PARAMETER`
 
-Đây là lệnh SQL\*Plus, không phải câu SQL thông thường.
+Đây là lệnh SQLPlus, không phải câu SQL thông thường.
 
 ```
 SHOW PARAMETER;
@@ -355,7 +358,6 @@ Oracle có rất nhiều initialization parameters. Một số được sử d�
 Danh sách hỗ trợ có thể thay đổi theo phiên bản Oracle và các tùy chọn cài đặt.
 
 Cách đúng để xác định parameter có thể đặt ở PDB là truy vấn metadata của Oracle, sau đó đối chiếu tài liệu Oracle Database Reference đúng phiên bản.
-
 
 
 ## 6. Các Parameters quan trọng ở cấp CDB
@@ -589,8 +591,6 @@ SELECT name,
 FROM   v$parameter
 WHERE  name = 'open_cursors';
 ```
-
-Thay đổi này nhằm cấu hình cho PDB hiện tại, không tự động thay đổi tất cả PDB khác.
 
 ### 7.3. `SESSION_CACHED_CURSORS`
 
